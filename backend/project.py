@@ -5,7 +5,6 @@ import argparse
 
 from flask import Flask, request
 
-
 # Algorithmic stuff
 
 # API endpoints
@@ -28,6 +27,10 @@ def add_algorithm():
 def delete_algorithm():
     pass
 
+@app.route("/api/set-bpm", methods=["POST"])
+def set_bpm():
+    pass
+
 @app.route("/api/play", methods=["GET"])
 def play():
     pass
@@ -39,9 +42,7 @@ def stop():
 # Argument parser and entry point
 
 def parse_args():
-    parser = argparse.ArgumentParser(
-        prog="MelodyLab",
-        description="Run the MelodyLab server")
+    parser = argparse.ArgumentParser(description="Run the MelodyLab server")
     parser.add_argument("-p", "--port", type=int, default=5000,
                         help="Change server port (not usually required)")
     parser.add_argument("-i", "--host", type=str, default="0.0.0.0",
