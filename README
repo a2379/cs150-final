@@ -5,10 +5,29 @@
 - Antero Mejr, UTLN amejr01
 - Easton Kang, UTLN ekang05
 - Chaz Beauchamp, UTLN cbeauc01
--
 
 ## Running
 
-Run the command `python3 project.py`.
+- Install dependencies:
+    - Install Flask with pip: `pip3 install flask`
+    - Install pnpm: `curl -fsSL https://get.pnpm.io/install.sh | sh -`
+    - Install pnpm dependencies: `cd frontend; pnpm install --dev; cd ..;`
+- Run `./run-project.sh` to start the servers.
+- Navigate your web browser to the URL `http://localhost:5173`
+    - Make sure to refresh the page if the browser says it cannot connect.
 
 ## Composition approach
+
+The project provides a “Groovebox” or graphical step-sequencer program with
+algorithmic track generation abilities. After inputting a base melody and/or
+song parameters, users can create and play back algorithmically-generated music
+created from those inputs.
+
+Since the program makes multiple algorithms available for use, there are
+multiple points of interest in our approach. The available algorithms are:
+
+- First-species counterpoint: the user inputs a base melody, and a second part
+  is automatically generated with notes that follow the first-species rules.
+- Serialism: The user selects the base note as the root of the tone row, and a
+  part that follows the rules of Serialism is generated.
+- TODO: Update this.
