@@ -56,6 +56,6 @@ def parse_args():
 
 if __name__ == "__main__":
     args = parse_args()
-    if args.browser:
-        subprocess.run(["xdg-open", f"https://{args.host}:{args.port}"])
+    # if args.browser:
+        # subprocess.run(["xdg-open", f"https://{args.host}:{args.port}"])
     app.run(host=args.host, port=args.port, debug=args.debug)
