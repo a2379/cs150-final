@@ -1,4 +1,4 @@
-# CS 150 final project - MelodyLab
+# CS 150 final project
 
 ## Team members
 
@@ -9,7 +9,7 @@
 ## Running
 
 - Install dependencies:
-    - Install Flask with pip: `pip3 install flask`
+    - Install dependencies with pip: `pip3 install -r backend/requirements.txt`
     - Install pnpm: `curl -fsSL https://get.pnpm.io/install.sh | sh -`
     - Install pnpm dependencies: `cd frontend; pnpm install --dev; cd ..;`
 - Run `./run-project.sh` to start the servers.
@@ -18,16 +18,12 @@
 
 ## Composition approach
 
-The project provides a “Groovebox” or graphical step-sequencer program with
-algorithmic track generation abilities. After inputting a base melody and/or
-song parameters, users can create and play back algorithmically-generated music
-created from those inputs.
-
-Since the program makes multiple algorithms available for use, there are
-multiple points of interest in our approach. The available algorithms are:
-
-- First-species counterpoint: the user inputs a base melody, and a second part
-  is automatically generated with notes that follow the first-species rules.
-- Serialism: The user selects the base note as the root of the tone row, and a
-  part that follows the rules of Serialism is generated.
-- TODO: Update this.
+The project provides a “Groovebox” or graphical step-sequencer program that
+uses higher order multidimensional cellular automata and neural networks to
+produce a song. The algorithmic method is a hybrid approach that starts with the
+user setting the on/off status of each "cell" in the step sequencer grid. This
+is translated into the starting state of the Cellular Automata. The Automata is
+run for a certain number of cycles (depending on the length of the song), then
+that input is passed into a pre-trained neural network, which adds additional
+harmony parts using a network. The output of the network is then translated into
+Music21 data structures which can be played.
