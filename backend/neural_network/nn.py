@@ -206,6 +206,8 @@ def generate_harmony(melody, genre):
         model = load_model(metadata)
         print(genre)
 
+        # melody = m21.stream.Part()
+        # melody.insert(0, m21.instrument.Piano())
         # harmony = m21.stream.Part()
         # harmony.insert(0, m21.instrument.Piano())
         # bass = m21.stream.Part()
@@ -267,8 +269,6 @@ def convert_to_music21(sections, m, h, b):
 # print(f"Elapsed time: {elapsed_time / 60:.4f} minutes")
 # return
 
-# melody = m21.stream.Part()
-# melody.insert(0, m21.instrument.Piano())
 
 # harmony_pitches, bass_pitches = nn.generate_harmony(model, melody_pitches)
 # harmony_pitches, bass_pitches = generate_harmony(melody_pitches, genre)

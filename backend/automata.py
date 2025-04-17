@@ -30,6 +30,8 @@ def grid_to_stream(grid1: list, grid2: list, bpm: int):
 
     # All Python lists
     melody, harmony, bass = nn.generate_harmony(nn_input, "jazz")
+    print(melody, harmony, bass)
+
     # s.append(harmony)
     # s.append(bass)
     return s

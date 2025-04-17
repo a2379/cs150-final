@@ -3,7 +3,7 @@
 
 import argparse
 from dataclasses import dataclass
-from subprocess import Process
+from multiprocessing import Process
 import itertools
 import random
 
