@@ -199,10 +199,10 @@ def train_network(midiPath):
 
 # Generates harmonies given a melody sequence
 def generate_harmony(melody, genre):
-    path = f"./{genre}/pretrained_metadata.py"
+    path = f"./neural_network/{genre}/pretrained_metadata.py"
 
     if os.path.isfile(path):
-        metadata = importlib.import_module(f"{genre}.pretrained_metadata")
+        metadata = importlib.import_module(f"neural_network.{genre}.pretrained_metadata")
         model = load_model(metadata)
         print(genre)
 
