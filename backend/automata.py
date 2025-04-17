@@ -2,120 +2,127 @@
 
 from music21 import *
 
-# About the data representation
-
-"""
-Arrays are generally shaped (I, N, 8) = bool, where:
-- I is the I-th instrument
-- N refers to the absolute position in terms of 16th nodes
-- 8 refers to the 7 notes of a scale (plus an octave)
-- bool is the on/off state of the note (similar to 1-hot encoding)
-
-For example, (0, 2, 4) = True means the instrument at index 0 plays a 16th note
-of the second note of the scale on the 2nd beat. Multiple True values with an
-increasing middle index means the note is held for multiple 16th notes.
-"""
+threshold = 0.5
 
 # External functions
 
-def grid_to_stream(grid: list, bpm: int):
+def grid_to_stream(grid1: list, grid2: list, bpm: int):
     s = stream.Stream()
+    s.append(tempo.MetronomeMark(bpm))
+    p = stream.Part()
+    p.append(clef.TrebleClef())
+    p.append(key.KeySignature(-3)) # C minor
+    p.append(instrument.Guitar())
+    n_measures = 16
+    notes_per_measure = 16
+    for i in range(n_measures * notes_per_measure):
+        next_state = transition_function(grid1, grid2)
+        p.append(state_to_music21_dynamics(next_state))
+        p.append(state_to_music21_note(next_state))
+        grid1 = grid2
+        grid2 = next_state
+    s.append(p)
+    # Add riffology parts here
     return s
 
 # Music21 stuff
 
-def scale_idx(idx):
-    # Minor scale
-    if idx in [0, 1, 3, 4, 6, 7]:
-        return 2 * idx
+def state_to_music21_dynamics(s: list):
+    notes_active = [x for x in s if x > threshold]
+    avg = sum(notes_active) / max(len(notes_active), 1.0)
+    return dynamics.Dynamic(avg)
+
+def state_to_music21_note(s: list):
+    notes = [note.Note(index_to_pitch(i), quarterLength=0.25)
+             for i, x in enumerate(s) if x > threshold]
+    if notes:
+        return chord.Chord(notes, quarterLength=0.25)
     else:
-        return 2 * idx - 1
+        return note.Rest(quarterLength=0.25)
 
-def idx_to_pitch(idx):
-    return 4 * 12 + scale_idx(idx)
+def scale_index(idx):
+    # Minor scale (commented out)
+    """lut = {
+        0: 0,
+        1: 2, # Second is 2 semitones
+        2: 3, # Minor third is 3 semitones
+        3: 5,
+        4: 7,
+        5: 8, # Flat sixth
+        6: 10,
+        7: 12, # Octave
+    }"""
+    # Hira Joshi pentatonic minor
+    lut = {
+        0: 0,
+        1: 2,
+        2: 3,
+        # Skip fourth
+        3: 7,
+        4: 8,
+        # Skip seventh
+        5: 12,
+    }
+    lut2 = {x + 5 : y + 12 for x, y in lut.items()} # Second octave dict
+    lut.update(lut2) # Merge them
+    return lut[idx]
 
-def song_array_to_stream(arr: np.ndarray) -> stream.Stream:
-    s = stream.Stream()
-    last_pitch = {x: False for x in range(8)}
-    for inst in arr:
-        p = stream.Part()
-        for pos in inst:
-            for n in pos:
-                if n:
-                    if last_pitch[n]:
-                        last_pitch[n].duration.quarterLength += 0.5
-                    else:
-                        last_pitch[n] = note.Note(idx_to_pitch(n),
-                                                  quarterLength=0.5)
-                else:
-                    if last_pitch[n]:
-                        l = [x for x in last_pitch.values() if x]
-                        p.append(chord.Chord(l))
-                        last_pitch[n] = False
-                    else:
-                        pass
-        l = [x for x in last_pitch.values() if x]
-        p.append(chord.Chord(l))
-        s.append(p)
-    return s
+def index_to_pitch(idx):
+    base_octave = 4
+    notes_per_octave = 12
+    return base_octave * notes_per_octave + scale_index(idx)
 
-# Algorithmic stuff
+# Automata
 
-def make_lut(neighbor_range, num):
-    # Size of sequence (center cell + neighbors)
-    s = neighbor_range[0] + neighbor_range[1] + 1
+def transition_function(s1, s2):
+    """About the rule:
 
-    # Binary representation of wolfram number (unpadded)
-    b = bin(num)[2:]
-
-    # All permutations of sequences
-    l = ["".join(seq) for seq in itertools.product("01", repeat=s)]
-
-    # Binary representation of wolfram number (padded)
-    bs = b.rjust(len(l), "1")
-
-    # Build lookup table
-    lut = {}
-    for i, item in enumerate(reversed(l)):
-        lut[item] = bs[i]
-    return lut
-
-def arr_to_string(arr):
-    out = ""
-    for obj in arr:
-        if obj:
-            out += "1"
+    - 2-octave range across an 8-note minor scale (list length is 16)
+    - Wolfram rule type is 31 (considering next 2 notes on left/right)
+    - Pseudo-infinite boundaries using an extra 2 padding cells on each end
+    - Padding cells are assumed to be at threshold
+    - If t-1 center cell is above threshold, subtract t-1 neighbors
+    - If t-1 center cell is below threshold, add t-1 neighbors
+    - Further neighbors have smaller influence
+    - Reverse this relation for t-2, but with smaller weights overall
+    """
+    scale_size = 10 # 10 for pentatonic, 16 for regular
+    l = [0.0] * scale_size
+    padding = [0.0, 0.0]
+    l = padding + l + padding
+    s1 = padding + s1 + padding
+    s2 = padding + s2 + padding
+    scale = 0.5
+    inner_weight_t1 = 0.5 * scale
+    outer_weight_t1 = 0.3 * inner_weight_t1
+    inner_weight_t2 = 0.2 * inner_weight_t1
+    outer_weight_t2 = 0.1 * inner_weight_t2
+    stop_index = len(l) - 2
+    for i in range(2, stop_index):
+        center = s1[i]
+        if center > threshold:
+            l[i] = (center - threshold
+                    - (inner_weight_t1 * s1[i-1])
+                    - (outer_weight_t1 * s1[i-2])
+                    - (inner_weight_t1 * s1[i+1])
+                    - (outer_weight_t1 * s1[i+2])
+                    - (inner_weight_t2 * s2[i-1])
+                    - (outer_weight_t2 * s2[i-2])
+                    - (inner_weight_t2 * s2[i+1])
+                    - (outer_weight_t2 * s2[i+2]))
         else:
-            out += "0"
-    return out
+            l[i] = (center
+                    + (inner_weight_t1 * s1[i-1])
+                    + (outer_weight_t1 * s1[i-2])
+                    + (inner_weight_t1 * s1[i+1])
+                    + (outer_weight_t1 * s1[i+2])
+                    + (inner_weight_t2 * s2[i-1])
+                    + (outer_weight_t2 * s2[i-2])
+                    + (inner_weight_t2 * s2[i+1])
+                    + (outer_weight_t2 * s2[i+2]))
+    # Remove padding and normalize
+    l = [normalize(x) for x in l[2:-2]]
+    return l
 
-def rule_num_to_func(neighbor_range: tuple, num: int):
-    """Range is pair (left, right). num is Wolfram automata number."""
-    left, right = neighbor_range
-    lut = make_lut(neighbor_range, num)
-
-    # In: single 1x8 sample
-    # Out: next 1x8 sample
-    def func(arr: np.ndarray):
-        out = np.full((8), False)
-        for i, val in enumerate(arr):
-            # If range is out of bounds, assume zero.
-            subarr = np.take(arr, range(i - left, i + right + 1), mode="wrap")
-            out[i] = bool(int(lut[arr_to_string(subarr)]))
-        return out
-
-    return func
-
-def get_song_length(sec: int = 10):
-    return ((ui_state.bpm // 60) * sec) // 4
-
-def grid_to_song_array(grid: np.ndarray, bpm: int) -> np.ndarray:
-    f = rule_num_to_func(ui_state.neighbor_range, ui_state.rule_num)
-    l = get_song_length()
-    state = np.array(ui_state.grid[0])
-    out = np.full((1, l, 8), False)
-    for i in range(l):
-        tmp = f(state)
-        out[0][i] = tmp
-        state = tmp
-    return out
+def normalize(x):
+    return max(min(x, 1.0), 0.0)

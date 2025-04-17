@@ -5,6 +5,7 @@ import argparse
 from dataclasses import dataclass
 import subprocess
 import itertools
+import random
 
 from flask import Flask, request
 
@@ -14,12 +15,15 @@ from automata import grid_to_stream
 
 @dataclass
 class UiState:
-    grid: list
+    grid1: list
+    grid2: list
     bpm: int = 120
     proc = None
 
 
-ui_state = UiState([[0]*64]*64)
+random.seed(22)
+ui_state = UiState([random.random() for i in range(16)],
+                   [random.random() for i in range(16)])
 app = Flask(__name__)
 
 # API endpoints
@@ -31,10 +35,8 @@ def default():
 
 @app.route("/api/update-grid", methods=["POST"])
 def update_grid():
-    grid = request.json["grid_state"] # 2D list of lists
-    for i, lst in enumerate(grid):
-        for j, val in enumerate(lst):
-            ui_state.grid[i][j] = val
+    ui_state.grid1 = request.json["grid1"]
+    ui_state.grid2 = request.json["grid2"]
 
 
 @app.route("/api/set-speed", methods=["POST"])
@@ -44,7 +46,7 @@ def set_bpm():
 
 @app.route("/api/play", methods=["GET"])
 def play():
-    strm = grid_to_stream(ui_state.grid, ui_state.bpm)
+    strm = grid_to_stream(ui_state.grid1, ui_state.grid2, ui_state.bpm)
     ui_state.proc = Process(target=strm.show, args=("midi",))
     ui_state.proc.start()
 
@@ -63,7 +65,7 @@ def stop():
 # Argument parser and entry point
 
 def show(cli_args) -> None:
-    strm = grid_to_stream(ui_state.grid, ui_state.bpm)
+    strm = grid_to_stream(ui_state.grid1, ui_state.grid2, ui_state.bpm)
     if cli_args.midi:
         strm.show("midi")
     elif cli_args.sheet:
