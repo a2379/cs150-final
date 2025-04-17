@@ -324,59 +324,115 @@ class RhythmGenerator:
         else:  # Resolution (measure 8)
             return 1.0
 
-def get_top_emotional_measures(self, count=8):
-    """
-    Get the indices of the top scoring measures.
-    
-    Parameters:
-    -----------
-    count : int
-        The number of top measures to return.
+    def get_top_emotional_measures(self, count=8):
+        """
+        Get the indices of the top scoring measures.
         
-    Returns:
-    --------
-    list
-        A list of indices for the top-scoring measures.
-    """
-    if not self.measure_scores:
-        return []
-    
-    # Sort measures by score in descending order
-    sorted_measures = sorted(self.measure_scores.items(), key=lambda x: x[1], reverse=True)
-    
-    # Return the indices of the top measures
-    return [idx for idx, _ in sorted_measures[:count]]
-
-def process_measure(self, measure, max_depth=2, measure_idx=None, time_signature=(4, 4)):
-    """
-    Process a single measure using stochastic binary subdivision and calculate its emotional score.
-    
-    Parameters:
-    -----------
-    measure : list
-        A list of notes or chords to process.
-    max_depth : int
-        Maximum subdivision depth.
-    measure_idx : int, optional
-        The index of the current measure in the sequence.
-    time_signature : tuple, optional
-        The time signature of the measure as (numerator, denominator).
+        Parameters:
+        -----------
+        count : int
+            The number of top measures to return.
             
-    Returns:
-    --------
-    list
-        A list of tuples (note, duration) after subdivision.
-    """
-    processed_measure = self.apply_stochastic_subdivision(measure, max_depth)
-    
-    # Store this measure for future reference
-    if measure_idx is None:
-        measure_idx = len(self.all_measures)
-    
-    self.all_measures.append(processed_measure)
-    
-    # Calculate and store emotional score
-    emotional_score = self.calculate_emotional_score(processed_measure, measure_idx, time_signature)
-    self.measure_scores[measure_idx] = emotional_score
-    
-    return processed_measure
+        Returns:
+        --------
+        list
+            A list of indices for the top-scoring measures.
+        """
+        if not self.measure_scores:
+            return []
+        
+        # Sort measures by score in descending order
+        sorted_measures = sorted(self.measure_scores.items(), key=lambda x: x[1], reverse=True)
+        
+        # Return the indices of the top measures
+        return [idx for idx, _ in sorted_measures[:count]]
+
+    def process_measure(self, measure, max_depth=2, measure_idx=None, time_signature=(4, 4)):
+        """
+        Process a single measure using stochastic binary subdivision and calculate its emotional score.
+        
+        Parameters:
+        -----------
+        measure : list
+            A list of notes or chords to process.
+        max_depth : int
+            Maximum subdivision depth.
+        measure_idx : int, optional
+            The index of the current measure in the sequence.
+        time_signature : tuple, optional
+            The time signature of the measure as (numerator, denominator).
+                
+        Returns:
+        --------
+        list
+            A list of tuples (note, duration) after subdivision.
+        """
+        processed_measure = self.apply_stochastic_subdivision(measure, max_depth)
+        
+        # Store this measure for future reference
+        if measure_idx is None:
+            measure_idx = len(self.all_measures)
+        
+        self.all_measures.append(processed_measure)
+        
+        # Calculate and store emotional score
+        emotional_score = self.calculate_emotional_score(processed_measure, measure_idx, time_signature)
+        self.measure_scores[measure_idx] = emotional_score
+        
+        return processed_measure
+
+    def arrange_piece(self, input_measures, total_measures=64, max_depth=2, time_signature=(4, 4)):
+        """
+        Arrange a complete piece by processing input measures and organizing them based on emotional scores.
+        
+        Parameters:
+        -----------
+        input_measures : list
+            A list of lists, where each inner list contains notes/chords for a measure.
+        total_measures : int
+            The total number of measures in the final piece (should be divisible by 8).
+        max_depth : int
+            Maximum subdivision depth for stochastic binary subdivision.
+        time_signature : tuple
+            The time signature as (numerator, denominator).
+            
+        Returns:
+        --------
+        list
+            A list of processed measures arranged according to emotional scoring rules.
+        """
+        self.all_measures = []
+        self.measure_scores = {}
+        
+        # Process all input measures to get their emotional scores
+        for i, measure in enumerate(input_measures):
+            self.process_measure(measure, max_depth, i, time_signature)
+        
+        final_arrangement = []
+        num_phrases = (total_measures - 8) // 8
+        
+        # Process each regular phrase (all but the last one)
+        for phrase in range(num_phrases):
+            for position in range(8):
+                measure_idx = phrase * 8 + position
+                
+                if position == 7:  # At each 8th measure, use highest emotional rhythm so far
+                    candidate_indices = range(len(self.all_measures))
+                    sorted_indices = sorted(candidate_indices, 
+                                        key=lambda idx: self.measure_scores.get(idx, 0), 
+                                        reverse=True)
+                    selected_idx = sorted_indices[0]
+                    final_arrangement.append(self.all_measures[selected_idx])
+                else:
+                    # Use regular measure
+                    final_arrangement.append(self.all_measures[measure_idx])
+        
+        # For the last 8 measures, use the 8 highest emotional rhythms in ascending order
+        top_indices = self.get_top_emotional_measures(8)
+        top_indices_ascending = sorted(top_indices, 
+                                    key=lambda idx: self.measure_scores.get(idx, 0))
+        
+        for idx in top_indices_ascending:
+            final_arrangement.append(self.all_measures[idx])
+        
+        return final_arrangement
