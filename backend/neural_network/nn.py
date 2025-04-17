@@ -198,7 +198,7 @@ def train_network(midiPath):
 
 
 # Generates harmonies given a melody sequence
-def generate_harmony(melodySequence, genre):
+def generate_harmony(melody, genre):
     path = f"./{genre}/pretrained_metadata.py"
 
     if os.path.isfile(path):
@@ -206,23 +206,83 @@ def generate_harmony(melodySequence, genre):
         model = load_model(metadata)
         print(genre)
 
-        melodyTensor = torch.tensor(
-            [encodedNotes[n] for n in melodySequence], dtype=torch.long
-        ).unsqueeze(0)
-        model.eval()
+        # harmony = m21.stream.Part()
+        # harmony.insert(0, m21.instrument.Piano())
+        # bass = m21.stream.Part()
+        # bass.insert(0, m21.instrument.Piano())
+        # bass.append(m21.clef.BassClef())
 
-        # Predict harmony notes from sequence of melody notes
-        with torch.no_grad():
-            harmony_output, bass_output = model(melodyTensor)
-            harmony_output = harmony_output.squeeze(0)
-            harmony_predicted = torch.argmax(harmony_output, dim=1)
-            bass_output = bass_output.squeeze(0)
-            bass_predicted = torch.argmax(bass_output, dim=1)
+        # convert_to_music21(sections, melody_pitches, harmony_pitches, bass_pitches)
 
-            # Invert k,v pairs of encodedNotes to derive final pitches
-            encodedNotesInverse = {i: note for note, i in encodedNotes.items()}
-            return [encodedNotesInverse[i.item()] for i in harmony_predicted], [
-                encodedNotesInverse[i.item()] for i in bass_predicted
-            ]
+        harmony, bass = predict_notes(model, melody)
+        return (melody, harmony, bass)
     else:
         print(f"'{genre}' is an invalid genre.")
+
+
+def predict_notes(model, melody):
+    melodyTensor = torch.tensor(
+        [encodedNotes[n] for n in melody], dtype=torch.long
+    ).unsqueeze(0)
+    model.eval()
+
+    # Predict harmony notes from sequence of melody notes
+    with torch.no_grad():
+        harmony_output, bass_output = model(melodyTensor)
+        harmony_output = harmony_output.squeeze(0)
+        harmony_predicted = torch.argmax(harmony_output, dim=1)
+        bass_output = bass_output.squeeze(0)
+        bass_predicted = torch.argmax(bass_output, dim=1)
+
+        # Invert k,v pairs of encodedNotes to derive final pitches
+        encodedNotesInverse = {i: note for note, i in encodedNotes.items()}
+        return [encodedNotesInverse[i.item()] for i in harmony_predicted], [
+            encodedNotesInverse[i.item()] for i in bass_predicted
+        ]
+
+
+def convert_to_music21(sections, m, h, b):
+    for i in range(len(m)):
+        mNote = m21.chord.Chord(m[i])
+        mNote.quarterLength = 1.0
+        sections[0].append(mNote)
+
+        hNote = m21.chord.Chord(h[i]) if h[i] != "Rest" else m21.note.Rest()
+        hNote.quarterLength = 1.0
+        sections[1].append(hNote)
+
+        bNote = m21.chord.Chord(b[i]) if b[i] != "Rest" else m21.note.Rest()
+        bNote.quarterLength = 1.0
+        sections[2].append(bNote)
+
+
+# def main():
+#     genre = "rock"
+
+# start_time = time.time()
+# model = nn.train_network(f"./{genre}/*.midi")
+# nn.save_model(model, f"{genre}")
+# end_time = time.time()
+# elapsed_time = end_time - start_time
+# print(f"Elapsed time: {elapsed_time / 60:.4f} minutes")
+# return
+
+# melody = m21.stream.Part()
+# melody.insert(0, m21.instrument.Piano())
+
+# harmony_pitches, bass_pitches = nn.generate_harmony(model, melody_pitches)
+# harmony_pitches, bass_pitches = generate_harmony(melody_pitches, genre)
+# print(melody_pitches)
+# print(harmony_pitches)
+# print(bass_pitches)
+#
+#
+# s = m21.stream.Stream()
+# for section in sections:
+#     s.insert(0, section)
+#
+# s.show()
+
+
+# if __name__ == "__main__":
+#     main()
