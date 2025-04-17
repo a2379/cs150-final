@@ -1,4 +1,5 @@
 import os
+import importlib
 import glob
 import torch
 import torch.nn as nn
@@ -197,22 +198,31 @@ def train_network(midiPath):
 
 
 # Generates harmonies given a melody sequence
-def generate_harmony(model, melodySequence):
-    melodyTensor = torch.tensor(
-        [encodedNotes[n] for n in melodySequence], dtype=torch.long
-    ).unsqueeze(0)
-    model.eval()
+def generate_harmony(melodySequence, genre):
+    path = f"./{genre}/pretrained_metadata.py"
 
-    # Predict harmony notes from sequence of melody notes
-    with torch.no_grad():
-        harmony_output, bass_output = model(melodyTensor)
-        harmony_output = harmony_output.squeeze(0)
-        harmony_predicted = torch.argmax(harmony_output, dim=1)
-        bass_output = bass_output.squeeze(0)
-        bass_predicted = torch.argmax(bass_output, dim=1)
+    if os.path.isfile(path):
+        metadata = importlib.import_module(f"{genre}.pretrained_metadata")
+        model = load_model(metadata)
+        print(genre)
 
-        # Invert k,v pairs of encodedNotes to derive final pitches
-        encodedNotesInverse = {i: note for note, i in encodedNotes.items()}
-        return [encodedNotesInverse[i.item()] for i in harmony_predicted], [
-            encodedNotesInverse[i.item()] for i in bass_predicted
-        ]
+        melodyTensor = torch.tensor(
+            [encodedNotes[n] for n in melodySequence], dtype=torch.long
+        ).unsqueeze(0)
+        model.eval()
+
+        # Predict harmony notes from sequence of melody notes
+        with torch.no_grad():
+            harmony_output, bass_output = model(melodyTensor)
+            harmony_output = harmony_output.squeeze(0)
+            harmony_predicted = torch.argmax(harmony_output, dim=1)
+            bass_output = bass_output.squeeze(0)
+            bass_predicted = torch.argmax(bass_output, dim=1)
+
+            # Invert k,v pairs of encodedNotes to derive final pitches
+            encodedNotesInverse = {i: note for note, i in encodedNotes.items()}
+            return [encodedNotesInverse[i.item()] for i in harmony_predicted], [
+                encodedNotesInverse[i.item()] for i in bass_predicted
+            ]
+    else:
+        print(f"'{genre}' is an invalid genre.")

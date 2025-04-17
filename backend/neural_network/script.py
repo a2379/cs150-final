@@ -20,18 +20,6 @@ def convert_to_music21(sections, m, h, b):
         sections[2].append(bNote)
 
 
-def generate_harmony(melody_pitches, genre):
-    path = f"./{genre}/pretrained_metadata.py"
-
-    if os.path.isfile(path):
-        metadata = importlib.import_module(f"{genre}.pretrained_metadata")
-        model = nn.load_model(metadata)
-        print(genre)
-        return nn.generate_harmony(model, melody_pitches)
-    else:
-        print(f"'{genre}' is an invalid genre.")
-
-
 # def main():
 #     genre = "rock"
 
