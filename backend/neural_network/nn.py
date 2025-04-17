@@ -199,13 +199,15 @@ def train_network(midiPath):
 
 # Generates harmonies given a melody sequence
 def generate_harmony(melody, genre):
-    path = f"./{genre}/pretrained_metadata.py"
+    path = f"./neural_network/{genre}/pretrained_metadata.py"
 
     if os.path.isfile(path):
-        metadata = importlib.import_module(f"{genre}.pretrained_metadata")
+        metadata = importlib.import_module(f"neural_network.{genre}.pretrained_metadata")
         model = load_model(metadata)
         print(genre)
 
+        # melody = m21.stream.Part()
+        # melody.insert(0, m21.instrument.Piano())
         # harmony = m21.stream.Part()
         # harmony.insert(0, m21.instrument.Piano())
         # bass = m21.stream.Part()
@@ -267,8 +269,6 @@ def convert_to_music21(sections, m, h, b):
 # print(f"Elapsed time: {elapsed_time / 60:.4f} minutes")
 # return
 
-# melody = m21.stream.Part()
-# melody.insert(0, m21.instrument.Piano())
 
 # harmony_pitches, bass_pitches = nn.generate_harmony(model, melody_pitches)
 # harmony_pitches, bass_pitches = generate_harmony(melody_pitches, genre)

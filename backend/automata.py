@@ -7,6 +7,7 @@ threshold = 0.5
 
 # External functions
 
+
 def grid_to_stream(grid1: list, grid2: list, bpm: int):
     s = stream.Stream()
     s.append(tempo.MetronomeMark(bpm))
@@ -29,17 +30,36 @@ def grid_to_stream(grid1: list, grid2: list, bpm: int):
 
     # All Python lists
     melody, harmony, bass = nn.generate_harmony(nn_input, "jazz")
+    print(melody, harmony, bass)
+
     # s.append(harmony)
     # s.append(bass)
     return s
 
-# Music21 stuff
+
+# Music21
+def convert_to_music21(sections, m, h, b):
+    for i in range(len(m)):
+        mNote = m21.chord.Chord(m[i])
+        mNote.quarterLength = 1.0
+        sections[0].append(mNote)
+
+        hNote = m21.chord.Chord(h[i]) if h[i] != "Rest" else m21.note.Rest()
+        hNote.quarterLength = 1.0
+        sections[1].append(hNote)
+
+        bNote = m21.chord.Chord(b[i]) if b[i] != "Rest" else m21.note.Rest()
+        bNote.quarterLength = 1.0
+        sections[2].append(bNote)
 
 
 def state_to_nn_input(s):
-    l = [int_to_note_str(x) for x in s]
-    if len(l) == 1:
+    l = [int_to_note_str(i) for i, x in enumerate(s) if x > threshold]
+    list_len = len(l)
+    if list_len == 1:
         return l[0]
+    elif list_len > 3:
+        return tuple(l[:3])
     else:
         return tuple(l)
 
