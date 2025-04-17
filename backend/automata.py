@@ -17,8 +17,11 @@ def grid_to_stream(grid1: list, grid2: list, bpm: int):
     p.append(instrument.Guitar())
     n_measures = 16
     notes_per_measure = 16
+    nn_input = []
     for i in range(n_measures * notes_per_measure):
         next_state = transition_function(grid1, grid2)
+        if i % 4 == 0:
+            nn_input.append(state_to_nn_input(next_state))
         p.append(state_to_music21_dynamics(next_state))
         p.append(state_to_music21_note(next_state))
         grid1 = grid2
@@ -27,12 +30,34 @@ def grid_to_stream(grid1: list, grid2: list, bpm: int):
     # Add riffology parts here
     genre = "jazz"
     melody = []
-    harmony, bass = nn.generate_harmony(melody, genre)
+    harmony, bass = nn.generate_harmony(nn_input, genre)
+    s.append(harmony)
+    s.append(bass)
     return s
 
 
 # Music21 stuff
 
+def state_to_nn_input(s):
+    return tuple([int_to_note_str(x) for x in s])
+
+def int_to_note_str(x):
+    if x < 44:
+        oct = "4"
+    else:
+        oct = "5"
+    note_lut = {
+        0: "C",
+        1: "D",
+        2: "D#",
+        # Skip fourth (F)
+        3: "G",
+        4: "G#",
+        # Skip seventh
+        5: "C",
+    }
+    note_lut.update({x + 5 : y for x, y in note_lut.items()})
+    return note_lut[x] + oct
 
 def state_to_music21_dynamics(s: list):
     notes_active = [x for x in s if x > threshold]
