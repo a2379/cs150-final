@@ -1,0 +1,327 @@
+import random
+
+class RhythmGenerator:
+    """
+    A class to handle the rhythm generation for the music composition project,
+    using emotion-based stochastic binary subdivision.
+    """
+    
+    def __init__(self, subdivision_probability=0.3):
+        """
+        Constructor to initialize the rhythm generator.
+        
+        Parameters:
+        -----------
+        subdivision_probability : float
+            The probability of subdividing a note at each level.
+        """
+        self.subdivision_probability = subdivision_probability
+        
+        # Dictionary to store measures with their emotional scores
+        self.measure_scores = {}
+        
+        self.all_measures = []
+        
+    def apply_stochastic_subdivision(self, input_measure, max_depth=2):
+        """
+        Apply stochastic binary subdivision to a measure.
+        
+        Parameters:
+        -----------
+        input_measure: list
+            A list of notes or chords (strings or tuples) to be rhythmically processed.
+            Example: ['C4', 'D4', 'E4'] or [('C4', 'E4', 'G4'), 'D4', 'B4']
+            
+        max_depth : int
+            Maximum subdivision depth. For example:
+            - Starting with quarter notes:
+              depth=1: eighth notes
+              depth=2: sixteenth notes  
+            
+        Returns: 
+        --------
+        list
+            A list of tuples (note, duration) where duration is relative to the smallest
+            subdivision. For example, with max_depth=2, a quarter note would have 
+            duration=8 (4 sixteenth notes).
+        """
+        # Start with all notes at the longest duration
+        
+        initial_duration = 2 ** max_depth
+        rhythm_pattern = [(note, initial_duration) for note in input_measure]
+        
+        # Process the pattern, subdividing notes recursively
+        final_pattern = []
+        for note, duration in rhythm_pattern:
+            final_pattern.extend(self._subdivide_note(note, duration, 0, max_depth))
+            
+        return final_pattern
+    
+    def _subdivide_note(self, note, duration, current_depth, max_depth):
+        """
+        Recursively subdivide a note based on probability.
+        
+        Parameters:
+        -----------
+        note : str or tuple
+            The note or chord to potentially subdivide.
+        duration : int
+            The current duration of the note (in terms of smallest subdivision unit).
+        current_depth : int
+            The current recursion depth.
+        max_depth : int
+            The maximum allowed subdivision depth.
+            
+        Returns: 
+        --------
+        list
+            A list of (note, duration) tuples after subdivision.
+        """
+        # Base case: reached maximum depth or cannot divide further
+        if current_depth >= max_depth or duration <= 1:
+            return [(note, duration)]
+            
+        # Recursive case
+        if random.random() < self.subdivision_probability:
+            # Binary subdivision: split into two equal parts
+            half_duration = duration // 2
+            first_half = self._subdivide_note(note, half_duration, current_depth + 1, max_depth)
+            second_half = self._subdivide_note(note, half_duration, current_depth + 1, max_depth)
+                
+            return first_half + second_half
+        else:
+            # No subdivision
+            return [(note, duration)]
+    
+def calculate_emotional_score(self, processed_measure, measure_idx=None, time_signature=(4, 4)):
+    """
+    Calculate the emotional score of a rhythmic measure based on multiple dimensions.
+    
+    Parameters:
+    -----------
+    processed_measure : list
+        A list of tuples (note, duration) representing a processed measure.
+    measure_idx : int, optional
+        The index of the current measure in the sequence.
+    time_signature : tuple, optional
+        The time signature of the measure as (numerator, denominator).
+        
+    Returns:
+    --------
+    float
+        The total emotional score of the measure.
+    """
+    # Convert processed_measure to a binary pattern for easier analysis
+    pattern = self._convert_to_binary_pattern(processed_measure)
+    
+    # Calculate individual scores
+    density_score = self._calculate_density_score(pattern)
+    syncopation_score = self._calculate_syncopation_score(pattern, time_signature)
+    
+    # Calculate surprise score if we have a previous measure
+    surprise_score = 0
+    if measure_idx is not None and measure_idx > 0:
+        prev_pattern = self._convert_to_binary_pattern(self.all_measures[measure_idx - 1])
+        surprise_score = self._calculate_surprise_score(pattern, prev_pattern)
+    
+    # Calculate phrase position multiplier
+    phrase_pos_multiplier = 1.0
+    if measure_idx is not None:
+        phrase_pos_multiplier = self._calculate_phrase_position_multiplier(measure_idx)
+    
+    # Calculate rhythmic development score
+    development_score = self._calculate_development_score(pattern, measure_idx)
+    
+    # Combine scores
+    base_score = (density_score + syncopation_score + surprise_score + development_score) / 4
+    total_score = base_score * phrase_pos_multiplier
+    
+    return total_score
+
+def _convert_to_binary_pattern(self, processed_measure):
+    """
+    Convert a processed measure to a binary pattern (1 for note onset, 0 for rest/continuation).
+    
+    Parameters:
+    -----------
+    processed_measure : list
+        A list of tuples (note, duration) representing a processed measure.
+        
+    Returns:
+    --------
+    list
+        A binary list where 1 indicates a note onset and 0 indicates a rest or note continuation.
+    """
+    # Determine the total length of the pattern based on the smallest subdivision
+    total_length = sum(duration for _, duration in processed_measure)
+    binary_pattern = [0] * total_length
+    
+    # Mark note onsets
+    position = 0
+    for note, duration in processed_measure:
+        if note is not None:  
+            binary_pattern[position] = 1
+        position += duration
+    
+    return binary_pattern
+
+def _calculate_density_score(self, pattern):
+    """
+    Calculate the density score (0-10) based on the ratio of notes to total positions.
+    
+    Parameters:
+    -----------
+    pattern : list
+        A binary pattern where 1 indicates a note onset and 0 indicates a rest or continuation.
+        
+    Returns:
+    --------
+    float
+        The density score from 0 to 10.
+    """
+    if not pattern:
+        return 0
+    
+    density = sum(pattern) / len(pattern)
+    return density * 10
+
+def _calculate_syncopation_score(self, pattern, time_signature=(4, 4)):
+    """
+    Calculate the syncopation score (0-10) based on emphasis of off-beats.
+    
+    Parameters:
+    -----------
+    pattern : list
+        A binary pattern where 1 indicates a note onset and 0 indicates a rest or continuation.
+    time_signature : tuple
+        The time signature as (numerator, denominator).
+        
+    Returns:
+    --------
+    float
+        The syncopation score from 0 to 10.
+    """
+    if not pattern or sum(pattern) == 0:
+        return 0
+    
+    # Define position weights for 4/4 time with 16 sixteenth notes
+    # Higher weights for traditionally weaker beats
+    if time_signature == (4, 4) and len(pattern) == 16:
+        position_weights = [1, 4, 2, 3, 2, 4, 3, 4, 2, 4, 3, 4, 3, 4, 4, 4]
+    else:
+        # For other time signatures or subdivisions, create a generic weighting
+        # where strong beats get weight 1 and all others get higher weights
+        positions_per_beat = len(pattern) // time_signature[0]
+        position_weights = []
+        for beat in range(time_signature[0]):
+            for pos in range(positions_per_beat):
+                if pos == 0:  # Strong beat
+                    position_weights.append(1)
+                else:  # Off-beat
+                    # Gradually increase weight for later positions within each beat
+                    position_weights.append(1 + (3 * pos / positions_per_beat))
+    
+    # Calculate weighted syncopation
+    weighted_sum = sum(weight * note for weight, note in zip(position_weights, pattern))
+    max_possible = sum(position_weights)
+    
+    # Only count positions with notes
+    note_positions = [i for i, note in enumerate(pattern) if note == 1]
+    if not note_positions:
+        return 0
+    
+    weights_of_note_positions = sum(position_weights[i] for i in note_positions)
+    
+    # Normalize to 0-10 scale
+    syncopation_score = (weighted_sum / weights_of_note_positions) * 2.5  # Scale factor to get near 0-10
+    return min(10, syncopation_score)  # Cap at 10
+
+def _calculate_surprise_score(self, current_pattern, previous_pattern):
+    
+
+def _calculate_phrase_position_multiplier(self, measure_idx, phrase_length=8):
+    """
+    Calculate a multiplier based on position within a musical phrase.
+    
+    Parameters:
+    -----------
+    measure_idx : int
+        The index of the current measure.
+    phrase_length : int
+        The length of a typical phrase in measures.
+        
+    Returns:
+    --------
+    float
+        A multiplier between 0.8 and 1.5.
+    """
+    phrase_position = measure_idx % phrase_length
+    
+    # Define multipliers for different positions in the phrase
+    if phrase_position < 2:  # Early in phrase (measures 1-2)
+        return 0.8
+    elif phrase_position < 6:  # Building (measures 3-6)
+        return 1.2
+    elif phrase_position == 6:  # Climax (measure 7)
+        return 1.5
+    else:  # Resolution (measure 8)
+        return 1.0
+
+def _calculate_development_score(self, pattern, measure_idx):
+
+def get_top_emotional_measures(self, count=8):
+    """
+    Get the indices of the top scoring measures.
+    
+    Parameters:
+    -----------
+    count : int
+        The number of top measures to return.
+        
+    Returns:
+    --------
+    list
+        A list of indices for the top-scoring measures.
+    """
+    if not self.measure_scores:
+        return []
+    
+    # Sort measures by score in descending order
+    sorted_measures = sorted(self.measure_scores.items(), key=lambda x: x[1], reverse=True)
+    
+    # Return the indices of the top measures
+    return [idx for idx, _ in sorted_measures[:count]]
+
+def process_measure(self, measure, max_depth=3, measure_idx=None, time_signature=(4, 4)):
+    """
+    Process a single measure using stochastic binary subdivision and calculate its emotional score.
+    
+    Parameters:
+    -----------
+    measure : list
+        A list of notes or chords to process.
+    max_depth : int
+        Maximum subdivision depth.
+    measure_idx : int, optional
+        The index of the current measure in the sequence.
+    time_signature : tuple, optional
+        The time signature of the measure as (numerator, denominator).
+            
+    Returns:
+    --------
+    list
+        A list of tuples (note, duration) after subdivision.
+    """
+    processed_measure = self.apply_stochastic_subdivision(measure, max_depth)
+    
+    # Store this measure for future reference
+    if measure_idx is None:
+        measure_idx = len(self.all_measures)
+    
+    self.all_measures.append(processed_measure)
+    
+    # Calculate and store emotional score
+    emotional_score = self.calculate_emotional_score(processed_measure, measure_idx, time_signature)
+    self.measure_scores[measure_idx] = emotional_score
+    
+    return processed_measure
