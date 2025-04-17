@@ -55,7 +55,7 @@ def convert_to_music21(sections, m, h, b):
 
 def state_to_nn_input(s):
     l = [int_to_note_str(i) for i, x in enumerate(s) if x > threshold]
-    list_len = len(;)
+    list_len = len(l)
     if list_len == 1:
         return l[0]
     elif list_len > 3:
