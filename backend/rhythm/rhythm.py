@@ -93,181 +93,236 @@ class RhythmGenerator:
             # No subdivision
             return [(note, duration)]
     
-def calculate_emotional_score(self, processed_measure, measure_idx=None, time_signature=(4, 4)):
-    """
-    Calculate the emotional score of a rhythmic measure based on multiple dimensions.
-    
-    Parameters:
-    -----------
-    processed_measure : list
-        A list of tuples (note, duration) representing a processed measure.
-    measure_idx : int, optional
-        The index of the current measure in the sequence.
-    time_signature : tuple, optional
-        The time signature of the measure as (numerator, denominator).
+    def calculate_emotional_score(self, processed_measure, measure_idx=None, time_signature=(4, 4)):
+        """
+        Calculate the emotional score of a rhythmic measure based on multiple dimensions.
         
-    Returns:
-    --------
-    float
-        The total emotional score of the measure.
-    """
-    # Convert processed_measure to a binary pattern for easier analysis
-    pattern = self._convert_to_binary_pattern(processed_measure)
-    
-    # Calculate individual scores
-    density_score = self._calculate_density_score(pattern)
-    syncopation_score = self._calculate_syncopation_score(pattern, time_signature)
-    
-    # Calculate surprise score if we have a previous measure
-    surprise_score = 0
-    if measure_idx is not None and measure_idx > 0:
-        prev_pattern = self._convert_to_binary_pattern(self.all_measures[measure_idx - 1])
-        surprise_score = self._calculate_surprise_score(pattern, prev_pattern)
-    
-    # Calculate phrase position multiplier
-    phrase_pos_multiplier = 1.0
-    if measure_idx is not None:
-        phrase_pos_multiplier = self._calculate_phrase_position_multiplier(measure_idx)
-    
-    # Calculate rhythmic development score
-    development_score = self._calculate_development_score(pattern, measure_idx)
-    
-    # Combine scores
-    base_score = (density_score + syncopation_score + surprise_score + development_score) / 4
-    total_score = base_score * phrase_pos_multiplier
-    
-    return total_score
-
-def _convert_to_binary_pattern(self, processed_measure):
-    """
-    Convert a processed measure to a binary pattern (1 for note onset, 0 for rest/continuation).
-    
-    Parameters:
-    -----------
-    processed_measure : list
-        A list of tuples (note, duration) representing a processed measure.
+        Parameters:
+        -----------
+        processed_measure : list
+            A list of tuples (note, duration) representing a processed measure.
+        measure_idx : int, optional
+            The index of the current measure in the sequence.
+        time_signature : tuple, optional
+            The time signature of the measure as (numerator, denominator).
+            
+        Returns:
+        --------
+        float
+            The total emotional score of the measure.
+        """
+        # Convert processed_measure to a binary pattern for easier analysis
+        pattern = self._convert_to_binary_pattern(processed_measure)
         
-    Returns:
-    --------
-    list
-        A binary list where 1 indicates a note onset and 0 indicates a rest or note continuation.
-    """
-    # Determine the total length of the pattern based on the smallest subdivision
-    total_length = sum(duration for _, duration in processed_measure)
-    binary_pattern = [0] * total_length
-    
-    # Mark note onsets
-    position = 0
-    for note, duration in processed_measure:
-        if note is not None:  
-            binary_pattern[position] = 1
-        position += duration
-    
-    return binary_pattern
-
-def _calculate_density_score(self, pattern):
-    """
-    Calculate the density score (0-10) based on the ratio of notes to total positions.
-    
-    Parameters:
-    -----------
-    pattern : list
-        A binary pattern where 1 indicates a note onset and 0 indicates a rest or continuation.
+        # Calculate individual scores
+        density_score = self._calculate_density_score(pattern)
+        syncopation_score = self._calculate_syncopation_score(pattern, time_signature)
         
-    Returns:
-    --------
-    float
-        The density score from 0 to 10.
-    """
-    if not pattern:
-        return 0
-    
-    density = sum(pattern) / len(pattern)
-    return density * 10
-
-def _calculate_syncopation_score(self, pattern, time_signature=(4, 4)):
-    """
-    Calculate the syncopation score (0-10) based on emphasis of off-beats.
-    
-    Parameters:
-    -----------
-    pattern : list
-        A binary pattern where 1 indicates a note onset and 0 indicates a rest or continuation.
-    time_signature : tuple
-        The time signature as (numerator, denominator).
+        # Calculate surprise score if we have a previous measure
+        surprise_score = 0
+        if measure_idx is not None and measure_idx > 0:
+            prev_pattern = self._convert_to_binary_pattern(self.all_measures[measure_idx - 1])
+            surprise_score = self._calculate_surprise_score(pattern, prev_pattern)
         
-    Returns:
-    --------
-    float
-        The syncopation score from 0 to 10.
-    """
-    if not pattern or sum(pattern) == 0:
-        return 0
-    
-    # Define position weights for 4/4 time with 16 sixteenth notes
-    # Higher weights for traditionally weaker beats
-    if time_signature == (4, 4) and len(pattern) == 16:
-        position_weights = [1, 4, 2, 3, 2, 4, 3, 4, 2, 4, 3, 4, 3, 4, 4, 4]
-    else:
-        # For other time signatures or subdivisions, create a generic weighting
-        # where strong beats get weight 1 and all others get higher weights
-        positions_per_beat = len(pattern) // time_signature[0]
-        position_weights = []
-        for beat in range(time_signature[0]):
-            for pos in range(positions_per_beat):
-                if pos == 0:  # Strong beat
-                    position_weights.append(1)
-                else:  # Off-beat
-                    # Gradually increase weight for later positions within each beat
-                    position_weights.append(1 + (3 * pos / positions_per_beat))
-    
-    # Calculate weighted syncopation
-    weighted_sum = sum(weight * note for weight, note in zip(position_weights, pattern))
-    max_possible = sum(position_weights)
-    
-    # Only count positions with notes
-    note_positions = [i for i, note in enumerate(pattern) if note == 1]
-    if not note_positions:
-        return 0
-    
-    weights_of_note_positions = sum(position_weights[i] for i in note_positions)
-    
-    # Normalize to 0-10 scale
-    syncopation_score = (weighted_sum / weights_of_note_positions) * 2.5  # Scale factor to get near 0-10
-    return min(10, syncopation_score)  # Cap at 10
-
-def _calculate_surprise_score(self, current_pattern, previous_pattern):
-    
-
-def _calculate_phrase_position_multiplier(self, measure_idx, phrase_length=8):
-    """
-    Calculate a multiplier based on position within a musical phrase.
-    
-    Parameters:
-    -----------
-    measure_idx : int
-        The index of the current measure.
-    phrase_length : int
-        The length of a typical phrase in measures.
+        # Calculate phrase position multiplier
+        phrase_pos_multiplier = 1.0
+        if measure_idx is not None:
+            phrase_pos_multiplier = self._calculate_phrase_position_multiplier(measure_idx)
         
-    Returns:
-    --------
-    float
-        A multiplier between 0.8 and 1.5.
-    """
-    phrase_position = measure_idx % phrase_length
-    
-    # Define multipliers for different positions in the phrase
-    if phrase_position < 2:  # Early in phrase (measures 1-2)
-        return 0.8
-    elif phrase_position < 6:  # Building (measures 3-6)
-        return 1.2
-    elif phrase_position == 6:  # Climax (measure 7)
-        return 1.5
-    else:  # Resolution (measure 8)
-        return 1.0
+        # Calculate rhythmic development score
+        # development_score = self._calculate_development_score(pattern, measure_idx)
+        
+        # Combine scores
+        base_score = (density_score + syncopation_score + surprise_score) / 3
+        total_score = base_score * phrase_pos_multiplier
+        
+        return total_score
 
-def _calculate_development_score(self, pattern, measure_idx):
+    def _convert_to_binary_pattern(self, processed_measure):
+        """
+        Convert a processed measure to a binary pattern (1 for note onset, 0 for rest/continuation).
+        
+        Parameters:
+        -----------
+        processed_measure : list
+            A list of tuples (note, duration) representing a processed measure.
+            
+        Returns:
+        --------
+        list
+            A binary list where 1 indicates a note onset and 0 indicates a rest or note continuation.
+        """
+        # Determine the total length of the pattern based on the smallest subdivision
+        total_length = sum(duration for _, duration in processed_measure)
+        binary_pattern = [0] * total_length
+        
+        # Mark note onsets
+        position = 0
+        for note, duration in processed_measure:
+            if note is not None:  
+                binary_pattern[position] = 1
+            position += duration
+        
+        return binary_pattern
+
+    def _calculate_density_score(self, pattern):
+        """
+        Calculate the density score (0-10) based on the ratio of notes to total positions.
+        
+        Parameters:
+        -----------
+        pattern : list
+            A binary pattern where 1 indicates a note onset and 0 indicates a rest or continuation.
+            
+        Returns:
+        --------
+        float
+            The density score from 0 to 10.
+        """
+        if not pattern:
+            return 0
+        
+        density = sum(pattern) / len(pattern)
+        return density * 10
+
+    def _calculate_syncopation_score(self, pattern, time_signature=(4, 4)):
+        """
+        Calculate the syncopation score (0-10) based on emphasis of off-beats.
+        
+        Parameters:
+        -----------
+        pattern : list
+            A binary pattern where 1 indicates a note onset and 0 indicates a rest or continuation.
+        time_signature : tuple
+            The time signature as (numerator, denominator).
+            
+        Returns:
+        --------
+        float
+            The syncopation score from 0 to 10.
+        """
+        if not pattern or sum(pattern) == 0:
+            return 0
+        
+        # Assumes 4/4 time with 16 sixteenth notes
+        # Higher weights for traditionally weaker beats
+        if time_signature == (4, 4) and len(pattern) == 16:
+            position_weights = [1, 4, 2, 3, 2, 4, 3, 4, 2, 4, 3, 4, 3, 4, 4, 4]
+        else:
+            # For other time signatures or subdivisions, create a generic weighting
+            # where strong beats get weight 1 and all others get higher weights
+            positions_per_beat = len(pattern) // time_signature[0]
+            position_weights = []
+            for beat in range(time_signature[0]):
+                for pos in range(positions_per_beat):
+                    if pos == 0:  # Strong beat
+                        position_weights.append(1)
+                    else:  # Off-beat, gradually increase weight for later positions within each beat
+                        position_weights.append(1 + (3 * pos / positions_per_beat))
+        
+        # Calculate weighted syncopation
+        weighted_sum = sum(weight * note for weight, note in zip(position_weights, pattern))
+        
+        # Only count positions with notes
+        note_positions = [i for i, note in enumerate(pattern) if note == 1]
+        if not note_positions:
+            return 0
+        
+        weights_of_note_positions = sum(position_weights[i] for i in note_positions)
+        
+        # Normalize to 0-10 scale
+        syncopation_score = (weighted_sum / weights_of_note_positions) * 2.5  # Scale factor to get near 0-10
+        return min(10, syncopation_score)  # Cap at 10
+
+    def _calculate_surprise_score(self, current_pattern, previous_pattern):
+        """
+        Calculate the rhythmic surprise score (0-10) compared to the previous pattern.
+        Handles variable-length patterns through pattern statistics.
+        
+        Parameters:
+        -----------
+        current_pattern : list
+            The binary pattern of the current measure.
+        previous_pattern : list
+            The binary pattern of the previous measure.
+            
+        Returns:
+        --------
+        float
+            The surprise score from 0 to 10.
+        """
+        if not current_pattern or not previous_pattern:
+            return 0
+        
+        # Compare rhythmic density (percentage of positions with notes)
+        current_density = sum(current_pattern) / len(current_pattern)
+        previous_density = sum(previous_pattern) / len(previous_pattern)
+        density_change = abs(current_density - previous_density)
+        
+        # Compare rhythmic grouping (average distance between note onsets)
+        current_onsets = [i for i, note in enumerate(current_pattern) if note == 1]
+        previous_onsets = [i for i, note in enumerate(previous_pattern) if note == 1]
+        
+        # Calculate average distances between consecutive onsets
+        current_distances = []
+        previous_distances = []
+        
+        if len(current_onsets) > 1:
+            current_distances = [current_onsets[i+1] - current_onsets[i] for i in range(len(current_onsets)-1)]
+        
+        if len(previous_onsets) > 1:
+            previous_distances = [previous_onsets[i+1] - previous_onsets[i] for i in range(len(previous_onsets)-1)]
+        
+        # Calculate average distance
+        current_avg_distance = sum(current_distances) / len(current_distances) if current_distances else 0
+        previous_avg_distance = sum(previous_distances) / len(previous_distances) if previous_distances else 0
+        
+        # Normalize the average distance to the pattern length
+        if current_avg_distance and previous_avg_distance:
+            current_norm_distance = current_avg_distance / len(current_pattern)
+            previous_norm_distance = previous_avg_distance / len(previous_pattern)
+            distance_change = abs(current_norm_distance - previous_norm_distance)
+        else:
+            distance_change = 0.5  # Default medium change if we can't calculate
+        
+        # Calculate position of first onset relative to pattern length
+        current_first_pos = current_onsets[0] / len(current_pattern) if current_onsets else 0
+        previous_first_pos = previous_onsets[0] / len(previous_pattern) if previous_onsets else 0
+        first_pos_change = abs(current_first_pos - previous_first_pos)
+        
+        # Combine metrics to get overall surprise score
+        surprise_score = (density_change * 3 + distance_change * 4 + first_pos_change * 3) * 10
+        
+        return min(10, surprise_score)  # Cap at 10
+        
+
+    def _calculate_phrase_position_multiplier(self, measure_idx, phrase_length=8):
+        """
+        Calculate a multiplier based on position within a musical phrase.
+        
+        Parameters:
+        -----------
+        measure_idx : int
+            The index of the current measure.
+        phrase_length : int
+            The length of a typical phrase in measures.
+            
+        Returns:
+        --------
+        float
+            A multiplier between 0.8 and 1.5.
+        """
+        phrase_position = measure_idx % phrase_length
+        
+        # Define multipliers for different positions in the phrase
+        if phrase_position < 2:  # Early in phrase (measures 1-2)
+            return 0.8
+        elif phrase_position < 6:  # Building (measures 3-6)
+            return 1.2
+        elif phrase_position == 6:  # Climax (measure 7)
+            return 1.5
+        else:  # Resolution (measure 8)
+            return 1.0
 
 def get_top_emotional_measures(self, count=8):
     """
@@ -292,7 +347,7 @@ def get_top_emotional_measures(self, count=8):
     # Return the indices of the top measures
     return [idx for idx, _ in sorted_measures[:count]]
 
-def process_measure(self, measure, max_depth=3, measure_idx=None, time_signature=(4, 4)):
+def process_measure(self, measure, max_depth=2, measure_idx=None, time_signature=(4, 4)):
     """
     Process a single measure using stochastic binary subdivision and calculate its emotional score.
     
