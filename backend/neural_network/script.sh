@@ -1,4 +1,4 @@
-csv_file="rock.csv"
+csv_file="*.csv"
 delimiter=","
 while IFS="$delimiter" read -r -a fields; do
   url="${fields[0]}"

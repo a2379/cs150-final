@@ -1,16 +1,9 @@
 import os
 import importlib
-import glob
 import torch
 import torch.nn as nn
 import torch.optim as optim
 import music21 as m21
-
-# Load built-in corpus
-chorales = m21.corpus.chorales.Iterator()
-
-# Notes are encoded in tuples of three possible and unique notes
-encodedNotes = {}
 
 
 # Simple LSTM-based model to predict harmony from melody
@@ -52,103 +45,6 @@ def load_model(metadata):
         print("No pretrained model found. Training new model.")
         # model = train_network()
     return model
-
-
-def extract_pitches(obj):
-    if not obj:
-        return ()
-    if obj.isNote:
-        return obj.nameWithOctave
-    elif obj.isChord:
-        return tuple(p.nameWithOctave for p in obj.pitches)
-
-
-# Extracts melody-harmony pairs from the music21 corpus with harmony as chords
-def process_corpus_data(midiPath):
-    sequences = []
-
-    for fname in glob.glob(midiPath):
-        try:
-            stream = m21.converter.parse(fname)
-        except m21.midi.MidiException as _:
-            continue
-
-        mNotes = []
-        hNotes = []
-        bNotes = []
-
-        # Store parts by name
-        parts = {"Melody": None, "Harmony": None, "Bass": None}
-
-        # Tranpose Note objects from music21 corpus
-        try:
-            for part in stream.parts:
-                # Melody
-                if any(s in part.partName for s in ["Percuss", "Drum"]):
-                    continue
-                elif any(s in part.partName for s in ["Bass", "Brass"]):
-                    parts["Bass"] = part.flatten().notes
-                elif any(s in part.partName for s in ["Piano", "Melody"]):
-                    parts["Melody"] = part.flatten().notes
-                else:
-                    parts["Harmony"] = part.flatten().notes
-        except:
-            continue
-
-        print(fname)
-
-        # Tranpose melody-harmony from Note objects
-        if parts["Melody"]:
-            for note in parts["Melody"]:
-                melodyNote = extract_pitches(note)
-                if not melodyNote:
-                    continue
-
-                harmNote = ()
-                if parts["Harmony"]:
-                    matching_notes = parts["Harmony"].getElementsByOffset(
-                        note.offset, mustBeginInSpan=False
-                    )
-                    if not matching_notes:
-                        continue
-                    harmNote = extract_pitches(matching_notes[0])
-
-                bassNote = ()
-                if parts["Bass"]:
-                    matching_notes = parts["Bass"].getElementsByOffset(
-                        note.offset, mustBeginInSpan=False
-                    )
-                    if not matching_notes:
-                        continue
-                    bassNote = extract_pitches(matching_notes[0])
-
-                mNotes.append(melodyNote)
-                hNotes.append(harmNote)
-                bNotes.append(bassNote)
-
-        if mNotes and hNotes and bNotes and len(mNotes) == len(hNotes) == len(bNotes):
-            sequences.append((mNotes, hNotes, bNotes))
-
-    return sequences
-
-
-# Encodes an index to a tuple of three unique notes as tensors for training
-def encode_sequences(sequences):
-    global encodedNotes
-    uniqueNotes = set(n for seq in sequences for notes in seq for n in notes)
-
-    encodedNotes = {note: i for i, note in enumerate(uniqueNotes)}
-
-    encodedData = [
-        (
-            torch.tensor([encodedNotes[n] for n in melody], dtype=torch.long),
-            torch.tensor([encodedNotes[n] for n in harmony], dtype=torch.long),
-            torch.tensor([encodedNotes[n] for n in bass], dtype=torch.long),
-        )
-        for melody, harmony, bass in sequences
-    ]
-
-    return encodedData
 
 
 # Train a new PyTorch model with hyperparams and optimizers per the tutorials
@@ -199,10 +95,10 @@ def train_network(midiPath):
 
 # Generates harmonies given a melody sequence
 def generate_harmony(melody, genre):
-    path = f"./neural_network/{genre}/pretrained_metadata.py"
+    path = f"./{genre}/pretrained_metadata.py"
 
     if os.path.isfile(path):
-        metadata = importlib.import_module(f"neural_network.{genre}.pretrained_metadata")
+        metadata = importlib.import_module(f"{genre}.pretrained_metadata")
         model = load_model(metadata)
         print(genre)
 
@@ -217,7 +113,7 @@ def generate_harmony(melody, genre):
         # convert_to_music21(sections, melody_pitches, harmony_pitches, bass_pitches)
 
         harmony, bass = predict_notes(model, melody)
-        return melody, harmony, bass
+        return (melody, harmony, bass)
     else:
         print(f"'{genre}' is an invalid genre.")
 
@@ -256,33 +152,3 @@ def convert_to_music21(sections, m, h, b):
         bNote = m21.chord.Chord(b[i]) if b[i] != "Rest" else m21.note.Rest()
         bNote.quarterLength = 1.0
         sections[2].append(bNote)
-
-
-# def main():
-#     genre = "rock"
-
-# start_time = time.time()
-# model = nn.train_network(f"./{genre}/*.midi")
-# nn.save_model(model, f"{genre}")
-# end_time = time.time()
-# elapsed_time = end_time - start_time
-# print(f"Elapsed time: {elapsed_time / 60:.4f} minutes")
-# return
-
-
-# harmony_pitches, bass_pitches = nn.generate_harmony(model, melody_pitches)
-# harmony_pitches, bass_pitches = generate_harmony(melody_pitches, genre)
-# print(melody_pitches)
-# print(harmony_pitches)
-# print(bass_pitches)
-#
-#
-# s = m21.stream.Stream()
-# for section in sections:
-#     s.insert(0, section)
-#
-# s.show()
-
-
-# if __name__ == "__main__":
-#     main()
