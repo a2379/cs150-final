@@ -7,7 +7,6 @@ threshold = 0.5
 
 # External functions
 
-
 def grid_to_stream(grid1: list, grid2: list, bpm: int):
     s = stream.Stream()
     s.append(tempo.MetronomeMark(bpm))
@@ -35,11 +34,14 @@ def grid_to_stream(grid1: list, grid2: list, bpm: int):
     s.append(bass)
     return s
 
-
 # Music21 stuff
 
 def state_to_nn_input(s):
-    return tuple([int_to_note_str(x) for x in s])
+    l = [int_to_note_str(x) for x in s]
+    if len(l) == 1:
+        return l[0]
+    else:
+        return tuple(l)
 
 def int_to_note_str(x):
     if x < 44:
