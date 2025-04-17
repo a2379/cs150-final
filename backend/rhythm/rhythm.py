@@ -381,7 +381,7 @@ class RhythmGenerator:
         
         return processed_measure
 
-    def arrange_piece(self, input_measures, total_measures=64, max_depth=2, time_signature=(4, 4)):
+    def arrange_piece(self, input_measures, total_measures=16, max_depth=2, time_signature=(4, 4)):
         """
         Arrange a complete piece by processing input measures and organizing them based on emotional scores.
         
@@ -390,7 +390,7 @@ class RhythmGenerator:
         input_measures : list
             A list of lists, where each inner list contains notes/chords for a measure.
         total_measures : int
-            The total number of measures in the final piece (should be divisible by 8).
+            The total number of measures in the final piece.
         max_depth : int
             Maximum subdivision depth for stochastic binary subdivision.
         time_signature : tuple
@@ -409,14 +409,14 @@ class RhythmGenerator:
             self.process_measure(measure, max_depth, i, time_signature)
         
         final_arrangement = []
-        num_phrases = (total_measures - 8) // 8
+        num_phrases = (total_measures - 4) // 4
         
         # Process each regular phrase (all but the last one)
         for phrase in range(num_phrases):
-            for position in range(8):
-                measure_idx = phrase * 8 + position
+            for position in range(4):
+                measure_idx = phrase * 4 + position
                 
-                if position == 7:  # At each 8th measure, use highest emotional rhythm so far
+                if position == 3:  # At each 4th measure, use highest emotional rhythm so far
                     candidate_indices = range(len(self.all_measures))
                     sorted_indices = sorted(candidate_indices, 
                                         key=lambda idx: self.measure_scores.get(idx, 0), 
@@ -427,8 +427,8 @@ class RhythmGenerator:
                     # Use regular measure
                     final_arrangement.append(self.all_measures[measure_idx])
         
-        # For the last 8 measures, use the 8 highest emotional rhythms in ascending order
-        top_indices = self.get_top_emotional_measures(8)
+        # For the last 4 measures, use the 4 highest emotional rhythms in ascending order
+        top_indices = self.get_top_emotional_measures(4)
         top_indices_ascending = sorted(top_indices, 
                                     key=lambda idx: self.measure_scores.get(idx, 0))
         
