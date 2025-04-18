@@ -2,6 +2,7 @@
 
 from music21 import *
 import neural_network.nn as nn
+import rhythm.rhythm as rhythm
 
 threshold = 0.5
 
@@ -13,15 +14,16 @@ def grid_to_stream(grid1: list, grid2: list, bpm: int):
     s.append(tempo.MetronomeMark(bpm))
     p = stream.Part()
     p.append(clef.TrebleClef())
-    p.append(key.KeySignature(-3))  # C minor
+    p.append(key.KeySignature(0))  # C major
+    # p.append(key.KeySignature(-3))  # C minor
     p.append(instrument.Guitar())
     n_measures = 16
     notes_per_measure = 16
     nn_input = []
     for i in range(n_measures * notes_per_measure):
         next_state = transition_function(grid1, grid2)
-        if i % 4 == 0:
-            nn_input.append(state_to_nn_input(next_state))
+        # if i % 4 == 0:
+        nn_input.append(state_to_nn_input(next_state))
         p.append(state_to_music21_dynamics(next_state))
         p.append(state_to_music21_note(next_state))
         grid1 = grid2
@@ -29,29 +31,36 @@ def grid_to_stream(grid1: list, grid2: list, bpm: int):
     s.append(p)
 
     # All Python lists
-    print(nn_input)
-    melody, harmony, bass = nn.generate_harmony(nn_input, "rock")
-    print(melody, harmony, bass)
+    harmony, bass = nn.generate_harmony(nn_input, "jazz")
 
-    # s.append(harmony)
-    # s.append(bass)
+    harmony_part = stream.Part()
+    harmony_part.insert(0, instrument.Piano())
+    bass_part = stream.Part()
+    bass_part.insert(0, instrument.Piano())
+    bass_part.append(clef.BassClef())
+
+    # rhythm_gen = rhythm.RhythmGenerator()
+    # rhythm_gen.arrange_piece(nn_input)
+    # rhythm_gen.arrange_piece(harmony)
+    # rhythm_gen.arrange_piece(bass)
+
+    convert_to_music21((harmony_part, bass_part), harmony, bass)
+
+    s.append(harmony_part)
+    s.append(bass_part)
     return s
 
 
 # Music21
-def convert_to_music21(sections, m, h, b):
-    for i in range(len(m)):
-        mNote = m21.chord.Chord(m[i])
-        mNote.quarterLength = 1.0
-        sections[0].append(mNote)
+def convert_to_music21(sections, h, b):
+    for i in range(len(h)):
+        hNote = chord.Chord(h[i]) if h[i] else note.Rest()
+        hNote.quarterLength = 0.25
+        sections[0].append(hNote)
 
-        hNote = m21.chord.Chord(h[i]) if h[i] != "Rest" else m21.note.Rest()
-        hNote.quarterLength = 1.0
-        sections[1].append(hNote)
-
-        bNote = m21.chord.Chord(b[i]) if b[i] != "Rest" else m21.note.Rest()
-        bNote.quarterLength = 1.0
-        sections[2].append(bNote)
+        bNote = chord.Chord(b[i]) if b[i] else note.Rest()
+        bNote.quarterLength = 0.25
+        sections[1].append(bNote)
 
 
 def state_to_nn_input(s):
