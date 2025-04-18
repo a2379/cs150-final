@@ -12,27 +12,29 @@ threshold = 0.5
 def grid_to_stream(grid1: list, grid2: list, bpm: int):
     s = stream.Stream()
     s.append(tempo.MetronomeMark(bpm))
-    p = stream.Part()
-    p.append(clef.TrebleClef())
-    p.append(key.KeySignature(0))  # C major
+    # p = stream.Part()
+    # p.append(clef.TrebleClef())
+    # p.append(key.KeySignature(0))  # C major
     # p.append(key.KeySignature(-3))  # C minor
-    p.append(instrument.Guitar())
+    # p.append(instrument.Guitar())
     n_measures = 16
     notes_per_measure = 16
     nn_input = []
     for i in range(n_measures * notes_per_measure):
         next_state = transition_function(grid1, grid2)
-        # if i % 4 == 0:
         nn_input.append(state_to_nn_input(next_state))
-        p.append(state_to_music21_dynamics(next_state))
-        p.append(state_to_music21_note(next_state))
+        # p.append(state_to_music21_dynamics(next_state))
+        # p.append(state_to_music21_note(next_state))
         grid1 = grid2
         grid2 = next_state
-    s.append(p)
+    # s.append(p)
 
     # All Python lists
     harmony, bass = nn.generate_harmony(nn_input, "jazz")
 
+    melody_part = stream.Part()
+    melody_part.insert(0, instrument.Guitar())
+    melody_part.append(key.KeySignature(0))  # C major
     harmony_part = stream.Part()
     harmony_part.insert(0, instrument.Piano())
     bass_part = stream.Part()
@@ -40,30 +42,41 @@ def grid_to_stream(grid1: list, grid2: list, bpm: int):
     bass_part.append(clef.BassClef())
 
     rhythm_gen = rhythm.RhythmGenerator()
-    # final_melody = rhythm_gen.arrange_piece(nn_input)
+
+    sections = (melody_part, harmony_part, bass_part)
+    # rhythm_gen.arrange_piece(sections)
+
+    final_melody = rhythm_gen.arrange_piece(nn_input)
     final_harmony = rhythm_gen.arrange_piece(harmony)
-    # final_bass = rhythm_gen.arrange_piece(bass)
-    print(final_harmony)
+    final_bass = rhythm_gen.arrange_piece(bass)
+    print(len(final_melody), len(final_harmony), len(final_bass))
 
     # (melody, harmony, bass)
-    convert_to_music21((harmony_part, bass_part), final_harmony, bass)
+    convert_to_music21(sections, final_melody, final_harmony, final_bass)
 
+    s.append(melody_part)
     s.append(harmony_part)
     s.append(bass_part)
     return s
 
 
 # Music21
-def convert_to_music21(sections, h, b):
-    for measure in h:
-        for item in measure:
-            hNote = chord.Chord(item[0]) if item[0] else note.Rest()
-            hNote.quarterLength = item[1] / 4
-            sections[0].append(hNote)
+def convert_to_music21(sections, m, h, b):
+    for i in range(len(m)):
+        for j in range(len(m[i])):
+            mNote = chord.Chord(m[i][j][0]) if m[i][j][0] else note.Rest()
+            mNote.quarterLength = m[i][j][1]
+            sections[0].append(mNote)
 
-        # bNote = chord.Chord(b[i]) if b[i] else note.Rest()
-        # bNote.quarterLength = 0.25
-        # sections[1].append(bNote)
+        for j in range(len(h[i])):
+            hNote = chord.Chord(h[i][j][0]) if h[i][j][0] else note.Rest()
+            hNote.quarterLength = h[i][j][1]
+            sections[1].append(hNote)
+
+        for j in range(len(b[i])):
+            bNote = chord.Chord(b[i][j][0]) if b[i][j][0] else note.Rest()
+            bNote.quarterLength = b[i][j][1]
+            sections[2].append(bNote)
 
 
 def state_to_nn_input(s):
