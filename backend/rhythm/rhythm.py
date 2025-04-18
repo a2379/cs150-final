@@ -220,8 +220,8 @@ class RhythmGenerator:
 
         # Assumes 4/4 time with 16 sixteenth notes
         # Higher weights for traditionally weaker beats
-        if time_signature == (4, 4) and len(pattern) == 16:
-            position_weights = [1, 4, 2, 3, 2, 4, 3, 4, 2, 4, 3, 4, 3, 4, 4, 4]
+        if time_signature == (4, 4) and len(pattern) == 4:
+            position_weights = [1, 4, 2, 3]
         else:
             # For other time signatures or subdivisions, create a generic weighting
             # where strong beats get weight 1 and all others get higher weights
