@@ -12,25 +12,19 @@ threshold = 0.5
 def grid_to_stream(grid1: list, grid2: list, bpm: int):
     s = stream.Stream()
     s.append(tempo.MetronomeMark(bpm))
-    # p = stream.Part()
-    # p.append(clef.TrebleClef())
-    # p.append(key.KeySignature(0))  # C major
-    # p.append(key.KeySignature(-3))  # C minor
-    # p.append(instrument.Guitar())
     n_measures = 16
     notes_per_measure = 16
-    nn_input = []
+    melody = []
     for i in range(n_measures * notes_per_measure):
         next_state = transition_function(grid1, grid2)
-        nn_input.append(state_to_nn_input(next_state))
+        melody.append(state_to_nn_input(next_state))
         # p.append(state_to_music21_dynamics(next_state))
         # p.append(state_to_music21_note(next_state))
         grid1 = grid2
         grid2 = next_state
-    # s.append(p)
 
-    # All Python lists
-    harmony, bass = nn.generate_harmony(nn_input, "jazz")
+    # Neural Network to generate harmony and bass
+    harmony, bass = nn.generate_harmony(melody, "jazz")
 
     melody_part = stream.Part()
     melody_part.insert(0, instrument.Guitar())
@@ -42,15 +36,12 @@ def grid_to_stream(grid1: list, grid2: list, bpm: int):
     bass_part.append(clef.BassClef())
 
     rhythm_gen = rhythm.RhythmGenerator()
-
     sections = (melody_part, harmony_part, bass_part)
-    # rhythm_gen.arrange_piece(sections)
 
-    final_melody = rhythm_gen.arrange_piece(nn_input)
+    final_melody = rhythm_gen.arrange_piece(melody)
     final_harmony = rhythm_gen.arrange_piece(harmony)
     final_bass = rhythm_gen.arrange_piece(bass)
 
-    # (melody, harmony, bass)
     convert_to_music21(sections, final_melody, final_harmony, final_bass)
 
     s.append(melody_part)
