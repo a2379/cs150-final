@@ -448,7 +448,11 @@ class RhythmGenerator:
         self.measure_scores = {}
 
         # Process all input measures to get their emotional scores
-        for i, measure in enumerate(input_measures):
+        measure_list = [
+            input_measures[i : i + 4] for i in range(0, len(input_measures), 4)
+        ]
+        print(measure_list)
+        for i, measure in enumerate(measure_list):
             self.process_measure(measure, max_depth, i, time_signature)
 
         final_arrangement = []

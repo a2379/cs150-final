@@ -40,27 +40,30 @@ def grid_to_stream(grid1: list, grid2: list, bpm: int):
     bass_part.append(clef.BassClef())
 
     rhythm_gen = rhythm.RhythmGenerator()
-    final_melody = rhythm_gen.arrange_piece(nn_input)
+    # final_melody = rhythm_gen.arrange_piece(nn_input)
     final_harmony = rhythm_gen.arrange_piece(harmony)
-    final_bass = rhythm_gen.arrange_piece(bass)
+    # final_bass = rhythm_gen.arrange_piece(bass)
+    print(final_harmony)
 
-    convert_to_music21((harmony_part, bass_part), harmony, bass)
+    # (melody, harmony, bass)
+    convert_to_music21((harmony_part, bass_part), final_harmony, bass)
 
     s.append(harmony_part)
-    s.append(bass_part)
+    # s.append(bass_part)
     return s
 
 
 # Music21
 def convert_to_music21(sections, h, b):
     for i in range(len(h)):
-        hNote = chord.Chord(h[i]) if h[i] else note.Rest()
-        hNote.quarterLength = 0.25
+        print(h[i])
+        hNote = chord.Chord(h[i][0]) if h[i][0] else note.Rest()
+        hNote.quarterLength = 0.25 / h[i][1]
         sections[0].append(hNote)
 
-        bNote = chord.Chord(b[i]) if b[i] else note.Rest()
-        bNote.quarterLength = 0.25
-        sections[1].append(bNote)
+        # bNote = chord.Chord(b[i]) if b[i] else note.Rest()
+        # bNote.quarterLength = 0.25
+        # sections[1].append(bNote)
 
 
 def state_to_nn_input(s):
