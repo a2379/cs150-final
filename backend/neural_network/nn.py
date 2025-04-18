@@ -254,10 +254,9 @@ def predict_notes(model, melody):
 
         # Invert k,v pairs of encodedNotes to derive final pitches
         encodedNotesInverse = {i: note for note, i in encodedNotes.items()}
-        return [
-            encodedNotesInverse[i.item()] if encodedNotesInverse[i.item()] else "C4"
-            for i in harmony_predicted
-        ], [encodedNotesInverse[i.item()] for i in bass_predicted]
+        return [encodedNotesInverse[i.item()] for i in harmony_predicted], [
+            encodedNotesInverse[i.item()] for i in bass_predicted
+        ]
 
 
 def convert_to_music21(sections, m, h, b):
