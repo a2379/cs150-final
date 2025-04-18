@@ -350,13 +350,13 @@ class RhythmGenerator:
         phrase_position = measure_idx % phrase_length
 
         # Define multipliers for different positions in the phrase
-        if phrase_position < 2:  # Early in phrase (measures 1-2)
+        if phrase_position == 1:  # Early in phrase (measures 1)
             return 0.8
-        elif phrase_position < 6:  # Building (measures 3-6)
+        elif phrase_position == 2:  # Building (2)
             return 1.2
-        elif phrase_position == 6:  # Climax (measure 7)
+        elif phrase_position == 3:  # Climax (measure 3)
             return 1.5
-        else:  # Resolution (measure 8)
+        else:  # Resolution (measure 4)
             return 1.0
 
     def get_top_emotional_measures(self, count=8):
