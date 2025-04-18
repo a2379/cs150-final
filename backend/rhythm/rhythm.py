@@ -488,4 +488,3 @@ class RhythmGenerator:
             final_arrangement.append(self.all_measures[idx])
 
         return final_arrangement
-
