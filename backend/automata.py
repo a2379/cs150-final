@@ -49,7 +49,6 @@ def grid_to_stream(grid1: list, grid2: list, bpm: int):
     final_melody = rhythm_gen.arrange_piece(nn_input)
     final_harmony = rhythm_gen.arrange_piece(harmony)
     final_bass = rhythm_gen.arrange_piece(bass)
-    print(len(final_melody), len(final_harmony), len(final_bass))
 
     # (melody, harmony, bass)
     convert_to_music21(sections, final_melody, final_harmony, final_bass)
@@ -65,17 +64,17 @@ def convert_to_music21(sections, m, h, b):
     for i in range(len(m)):
         for j in range(len(m[i])):
             mNote = chord.Chord(m[i][j][0]) if m[i][j][0] else note.Rest()
-            mNote.quarterLength = m[i][j][1]
+            mNote.quarterLength = m[i][j][1] / 4
             sections[0].append(mNote)
 
         for j in range(len(h[i])):
             hNote = chord.Chord(h[i][j][0]) if h[i][j][0] else note.Rest()
-            hNote.quarterLength = h[i][j][1]
+            hNote.quarterLength = h[i][j][1] / 4
             sections[1].append(hNote)
 
         for j in range(len(b[i])):
             bNote = chord.Chord(b[i][j][0]) if b[i][j][0] else note.Rest()
-            bNote.quarterLength = b[i][j][1]
+            bNote.quarterLength = b[i][j][1] / 4
             sections[2].append(bNote)
 
 
