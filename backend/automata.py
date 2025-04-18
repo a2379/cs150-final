@@ -39,10 +39,10 @@ def grid_to_stream(grid1: list, grid2: list, bpm: int):
     bass_part.insert(0, instrument.Piano())
     bass_part.append(clef.BassClef())
 
-    # rhythm_gen = rhythm.RhythmGenerator()
-    # rhythm_gen.arrange_piece(nn_input)
-    # rhythm_gen.arrange_piece(harmony)
-    # rhythm_gen.arrange_piece(bass)
+    rhythm_gen = rhythm.RhythmGenerator()
+    final_melody = rhythm_gen.arrange_piece(nn_input)
+    final_harmony = rhythm_gen.arrange_piece(harmony)
+    final_bass = rhythm_gen.arrange_piece(bass)
 
     convert_to_music21((harmony_part, bass_part), harmony, bass)
 
