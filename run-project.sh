@@ -12,6 +12,17 @@ cd frontend
 pnpm install
 cd ..
 
+# Function to kill any previous runs using port 5001
+kill_port_5001() {
+  PORT=5001
+  PID=$(lsof -ti tcp:$PORT)
+  if [ -n "$PID" ]; then
+    echo "Killing process on port $PORT (PID: $PID)..."
+    kill -9 $PID
+  fi
+}
+kill_port_5001
+
 # Start the backend
 cd backend
 ./project.py &
