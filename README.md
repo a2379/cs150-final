@@ -33,16 +33,16 @@
 
 ### Runtimes (cli)
 
-| Genre   | -pretrained | Runtime            | stdout phases |
-|---------|-------------|--------------------|---------------|
-| gospel  | True        | < 1s               | No            |
-| gospel  | False       | ~ 6m               | Yes           |
-| jazz    | True        | < 1s               | No            |
-| jazz    | False       | ~ 20m              | Yes           |
-| rock    | True        | < 1s               | No            |
-| rock    | False       | ~ 64m              | Yes           |
+| Genre   | -pretrained | Runtime                   | stdout phases |
+|---------|-------------|---------------------------|---------------|
+| gospel  | True        | < 1 second                | No            |
+| jazz    | True        | < 2 seconds               | No            |
+| rock    | True        | < 2 seconds               | No            |
+| gospel  | False       | ~ 6 minutes               | Yes           |
+| jazz    | False       | ~ 20 minutes              | Yes           |
+| rock    | False       | ~ 64 minutes              | Yes           |
 
-*Shortest training runtime is **~6m** (gospel).*<br>
+*Shortest training runtime is **6 minutes** (gospel).*<br>
 *There are plenty of print outputs to guide you between training phases.*
 
 ### Examples (cli)
