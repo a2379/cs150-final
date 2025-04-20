@@ -6,15 +6,16 @@
 - Easton Kang, UTLN ekang05
 - Chaz Beauchamp, UTLN cbeauc01
 
-## Running
+## Usage (GUI)
 
-- Install dependencies:
-    - Install dependencies with pip: `pip3 install -r backend/requirements.txt`
-    - Install pnpm: `curl -fsSL https://get.pnpm.io/install.sh | sh -`
-    - Install pnpm dependencies: `cd frontend; pnpm install --dev; cd ..;`
-- Run `./run-project.sh` to start the servers.
+- Run `./run-project.sh` to:
+    - Install backend (pip3), frontend (pnpm) dependencies
+    - Run backend, frontend servers
 - Navigate your web browser to the URL `http://localhost:5173`
-    - Make sure to refresh the page if the browser says it cannot connect.
+- Generated music will be output to MuseScore (stream.show())
+
+## Usage (cli)
+
 
 ## Composition approach
 
