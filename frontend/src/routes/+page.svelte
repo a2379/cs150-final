@@ -1,50 +1,43 @@
 <script lang="ts">
-	import { ScrollArea } from '$lib/components/ui/scroll-area';
-	import { Separator } from '$lib/components/ui/separator';
-	import MusicSheet from '$lib/components/MusicSheet.svelte';
-
-	const algorithms: Array<string> = [
-		'Neural Network',
-		'Riffology',
-		'Cellular Automata',
-		'Monte Carlo',
-		'Serialism'
-	];
-
-	let selectedIndex: number = $state(-1);
+	import MusicBoard from '$lib/components/MusicBoard.svelte';
+	const genres: Array<string> = ['Jazz', 'Gospel', 'Rock'];
+	let bpm: number = $state(120);
+	let selectedGenre: string = $state('Jazz');
+	let gridState: Array<Array<number>> = $state([new Array(16).fill(0.0), new Array(16).fill(0.0)]);
 </script>
 
-<div class="flex h-screen w-screen flex-col items-center justify-center">
-	<div class="flex h-1/2 w-full items-center justify-center">
-		<!-- Algorithms Selection -->
-		<div class="flex w-1/3 flex-col items-center justify-center">
-			<div class="mb-4 text-sm font-medium leading-none">Algorithms</div>
-			<ScrollArea class="w-1/2 rounded-md border">
-				{#each algorithms as alg, i}
-					<button
-						onclick={() => (selectedIndex = i)}
-						class="w-full p-4 text-start text-sm hover:bg-gray-600
-                  {i == selectedIndex ? 'bg-gray-600' : ''}"
-					>
-						{alg}
-					</button>
-					<Separator />
+<div class="h-screen w-screen overflow-hidden bg-[#121212] text-[#ebe8e8]">
+	<form
+		method="POST"
+		action="?/generate"
+		class="flex h-full w-full flex-col items-center justify-center overflow-hidden"
+	>
+		<!-- Top Menu -->
+		<div class="flex h-[10%] w-full items-center justify-center space-x-20">
+			<label class="input w-48 focus:border-transparent focus:ring-0 focus:outline-none">
+				<span class="label">BPM</span>
+				<input name="bpm" type="text" bind:value={bpm} />
+			</label>
+
+			<div class="join">
+				{#each genres as genre}
+					<input
+						bind:group={selectedGenre}
+						value={genre}
+						class="join-item btn btn-dash btn-success"
+						type="radio"
+						name="genre"
+						aria-label={genre}
+					/>
 				{/each}
-			</ScrollArea>
+			</div>
+
+			<button class="btn btn-soft btn-success" type="submit">Generate</button>
 		</div>
 
-		<!-- Music Sheet -->
-		<div class="mr-12 flex h-1/2 w-2/3 items-center justify-center">
-			<MusicSheet />
+		<!-- Music Board -->
+		<div class="flex h-[90%] w-full items-center justify-center">
+			<MusicBoard bind:gridState />
 		</div>
-
-		<!-- <div class="flex w-1/2 items-center justify-center"> -->
-		<!-- 	<div class="w-72"> -->
-		<!-- 		<Slider bind:value type="single" max={100} step={1} /> -->
-		<!-- 	</div> -->
-		<!-- </div> -->
-	</div>
-	<div class="flex h-1/2 w-full items-center justify-center">
-		<div class="text-3xl">[Display Result Here]</div>
-	</div>
+	</form>
 </div>
