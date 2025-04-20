@@ -47,7 +47,6 @@ def play():
     return jsonify({"message": "Music Generated"}), 200
 
 
-# Argument parser and entry point
 def generate(pretrained):
     melody = grid_to_stream(ui_state.grid1, ui_state.grid2, ui_state.bpm)
     harmony, bass = nn.generate_harmony(melody, ui_state.genre, pretrained)
@@ -58,6 +57,7 @@ def generate(pretrained):
     return convert_to_music21(final_melody, final_harmony, final_bass, ui_state.bpm)
 
 
+# Argument parser and entry point
 def parse_args():
     parser = argparse.ArgumentParser(description="Run the MelodyLab server")
     parser.add_argument(
@@ -93,7 +93,6 @@ def parse_args():
     parser.add_argument(
         "-pretrained", action="store_true", help="User Pretrained Neural Network Models"
     )
-    # parser.add_argument("-lt", "--longtrain", help="Train New NN Models and MIDI Encodings")
     args = parser.parse_args()
     return args
 
