@@ -20,6 +20,7 @@ class UiState:
     grid2: list
     bpm: int = 120
     genre: str = "jazz"
+    output: str = "midi"
 
 
 # Default Random Grid State (cli usage)
@@ -40,10 +41,15 @@ def default():
 def play():
     ui_state.bpm = request.json["bpm"]
     ui_state.genre = request.json["genre"]
+    ui_state.output = request.json["output"]
     ui_state.grid1 = request.json["grid1"]
     ui_state.grid2 = request.json["grid2"]
+
     stream = generate(True)
-    stream.show()
+    if ui_state.output == "midi":
+        stream.show("midi")
+    else:
+        stream.show()
     return jsonify({"message": "Music Generated"}), 200
 
 
@@ -64,7 +70,7 @@ def parse_args():
         "-p",
         "--port",
         type=int,
-        default=5000,
+        default=5001,
         help="Change server port (not usually required)",
     )
     parser.add_argument(

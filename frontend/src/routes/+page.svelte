@@ -1,8 +1,10 @@
 <script lang="ts">
 	import MusicBoard from '$lib/components/MusicBoard.svelte';
 	const genres: Array<string> = ['Jazz', 'Gospel', 'Rock'];
+	const outputs: Array<string> = ['Midi', 'Sheet'];
 	let bpm: number = $state(120);
 	let selectedGenre: string = $state('Jazz');
+	let output: string = $state('Midi');
 	let gridState: Array<Array<number>> = $state([new Array(16).fill(0.0), new Array(16).fill(0.0)]);
 </script>
 
@@ -28,6 +30,19 @@
 						type="radio"
 						name="genre"
 						aria-label={genre}
+					/>
+				{/each}
+			</div>
+
+			<div class="join">
+				{#each outputs as o}
+					<input
+						bind:group={output}
+						value={o}
+						class="join-item btn btn-dash btn-success"
+						type="radio"
+						name="output"
+						aria-label={o}
 					/>
 				{/each}
 			</div>

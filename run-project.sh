@@ -17,7 +17,6 @@ cd backend
 ./project.py &
 BACKEND_PID=$!
 echo "Backend running with PID $BACKEND_PID"
-xdg-open http://localhost:5173
 cd ..
 
 # Start the frontend
