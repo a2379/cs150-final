@@ -1,7 +1,6 @@
 #! /usr/bin/env python3
 """CS 150 final project"""
 
-import time
 import argparse
 import random
 from automata.automata import grid_to_stream
@@ -107,10 +106,7 @@ if __name__ == "__main__":
     args = parse_args()
     ui_state.bpm = args.bpm
     if args.midi or args.sheet or args.text or args.pretrained:
-        start_time = time.time()
         stream = generate(args.pretrained)
-        end_time = time.time()
-        print(f"{(end_time - start_time) / 60:.2f} minutes")
         if args.midi:
             stream.show("midi")
         elif args.text:

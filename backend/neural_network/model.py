@@ -149,9 +149,8 @@ def encode_sequences():
 
 
 def load_processed_midis(midiPath, metadata):
-    if os.path.exists(metadata.MODEL_PATH) and False:
+    if os.path.exists(metadata.MODEL_PATH):
         global processed_midis
-        print("Loading processed midis...")
         processed_midis = metadata.PROCESSED_MIDIS
         encoded_data = encode_sequences()
     else:

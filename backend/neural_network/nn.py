@@ -10,7 +10,6 @@ genres = ["jazz", "gospel", "rock"]
 
 # Generates harmonies given a melody sequence
 def generate_harmony(melody, genre, pretrained):
-    print(genre)
     path = f"./neural_network/{genre}/pretrained_metadata.py"
 
     if genre in genres and os.path.isfile(path):
@@ -18,6 +17,7 @@ def generate_harmony(melody, genre, pretrained):
         if pretrained:
             model = m.load_model(metadata)
         else:
+            print(f"No -pretrained flag: loading {genre} midis...")
             midi_path = f"./neural_network/{genre}/*.midi"
             model = m.train_network(midi_path, metadata)
             m.save_model(model, genre)
