@@ -61,5 +61,7 @@ user setting the on/off status of each "cell" in the step sequencer grid. This
 is translated into the starting state of the Cellular Automata. The Automata is
 run for a certain number of cycles (depending on the length of the song), then
 that input is passed into a pre-trained neural network, which adds additional
-harmony parts using a network. The output of the network is then translated into
+harmony parts using a network. Next, the output from these parts is modified
+via a stochastic binary subdivision algorithm with 'emotional scoring' to
+add variety to the rhythm. The resulting composition is then translated into
 Music21 data structures which can be played.
