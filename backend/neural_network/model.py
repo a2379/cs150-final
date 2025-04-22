@@ -1,3 +1,13 @@
+"""
+model.py defines and trains a simple LSTM-based neural network model that
+predicts harmony and bass from a melody sequence extracted from MIDI files.
+The training process includes:
+- Extracting and encoding notes from MIDI files (disabled).
+- Training two models from different seeds.
+- Training a validator network to distinguish their outputs.
+- Using the validator to improve a final adversarially trained model.
+"""
+
 import os
 import glob
 import torch
@@ -8,14 +18,19 @@ from neural_network.validator import ValidatorNet
 
 VALIDATOR_EPOCHS = 100  # Default epochs for validator training
 OVERFIT_MAX = 3  # If training overfits 3 times, finish training
+SEED_A = 42  # Seeds are the team's lucky numbers
+SEED_B = 123
 
-# Notes are encoded in tuples of three possible and unique notes
 encoded_notes = {}
 processed_midis = []
 
 
-# Simple LSTM-based model to predict harmony from melody
+# ============================ Model Definition ============================
 class HarmonyModel(nn.Module):
+    """
+    LSTM-based model for predicting harmony and bass lines from a melody.
+    """
+
     def __init__(self, vocab_size, embedding_dim=32, hidden_dim=64):
         super(HarmonyModel, self).__init__()
         self.embedding = nn.Embedding(vocab_size, embedding_dim)
@@ -31,8 +46,12 @@ class HarmonyModel(nn.Module):
         return h_output, b_output
 
 
-# Save recently trained model to pretrained path
+# ============================ Model I/O ============================
 def save_model(model, genre):
+    """
+    Save recently trained model to pretrained path
+    """
+
     torch.save(model.state_dict(), f"./neural_network/{genre}/pretrained")
     with open(f"./neural_network/{genre}/pretrained_metadata.py", "w") as file:
         file.write(f"CORPUS_ENCODED_SIZE={len(encoded_notes)}\n")
@@ -41,8 +60,11 @@ def save_model(model, genre):
         file.write(f"MODEL_PATH='./neural_network/{genre}/pretrained'\n")
 
 
-# Load pretrained model and model metadata
 def load_model(metadata):
+    """
+    Load pretrained model and model metadata
+    """
+
     model = HarmonyModel(metadata.CORPUS_ENCODED_SIZE)
     if os.path.exists(metadata.MODEL_PATH):
         model.load_state_dict(torch.load(metadata.MODEL_PATH))
@@ -55,7 +77,12 @@ def load_model(metadata):
     return model
 
 
+# ============================ MIDI Processing ============================
 def extract_pitches(obj):
+    """
+    Extract pitch from Note or Chord object.
+    """
+
     if not obj:
         return ()
     if obj.isNote:
@@ -66,6 +93,10 @@ def extract_pitches(obj):
 
 # Extracts melody-harmony pairs from the music21 corpus with harmony as chords
 def process_midis(midiPath):
+    """
+    Extract melody, harmony, and bass note sequences from MIDI files.
+    """
+
     for fname in glob.glob(midiPath):
         try:
             stream = m21.converter.parse(fname)
@@ -130,25 +161,11 @@ def process_midis(midiPath):
             processed_midis.append((mNotes, hNotes, bNotes))
 
 
-# Encodes an index to a tuple of three unique notes as tensors for training
-def encode_sequences():
-    global encoded_notes, processed_midis
-
-    uniqueNotes = set(n for seq in processed_midis for notes in seq for n in notes)
-    encoded_notes = {note: i for i, note in enumerate(uniqueNotes)}
-    encoded_data = [
-        (
-            torch.tensor([encoded_notes[n] for n in melody], dtype=torch.long),
-            torch.tensor([encoded_notes[n] for n in harmony], dtype=torch.long),
-            torch.tensor([encoded_notes[n] for n in bass], dtype=torch.long),
-        )
-        for melody, harmony, bass in processed_midis
-    ]
-
-    return encoded_data
-
-
 def load_processed_midis(midiPath, metadata):
+    """
+    Load or regenerate processed MIDI data.
+    """
+
     if os.path.exists(metadata.MODEL_PATH):
         global processed_midis
         processed_midis = metadata.PROCESSED_MIDIS
@@ -165,7 +182,33 @@ def load_processed_midis(midiPath, metadata):
     return encoded_data
 
 
+def encode_sequences():
+    """
+    Encode melodies, harmonies, and bass notes into tensor sequences.
+    """
+
+    global encoded_notes, processed_midis
+
+    uniqueNotes = set(n for seq in processed_midis for notes in seq for n in notes)
+    encoded_notes = {note: i for i, note in enumerate(uniqueNotes)}
+    encoded_data = [
+        (
+            torch.tensor([encoded_notes[n] for n in melody], dtype=torch.long),
+            torch.tensor([encoded_notes[n] for n in harmony], dtype=torch.long),
+            torch.tensor([encoded_notes[n] for n in bass], dtype=torch.long),
+        )
+        for melody, harmony, bass in processed_midis
+    ]
+
+    return encoded_data
+
+
+# ============================ Training ============================
 def train_single_model(model, encoded_data, label):
+    """
+    Train a single LSTM model on melody/harmony/bass sequences.
+    """
+
     optimizer = optim.Adam(model.parameters(), lr=0.001)
     criterion = nn.CrossEntropyLoss()
 
@@ -193,7 +236,14 @@ def train_single_model(model, encoded_data, label):
             print(f"[Model {label}] Epoch {epoch}, Loss: {avg_loss:.4f}")
 
 
-def train_network(midiPath, metadata, seedA=42, seedB=123):
+def train_network(midiPath, metadata, seedA=SEED_A, seedB=SEED_B):
+    """
+    Full training pipeline using adversarial validation:
+        - Trains two baseline models
+        - Trains a validator to distinguish them
+        - Trains a final model penalized by validator confidence
+    """
+
     encoded_data = load_processed_midis(midiPath, metadata)
 
     def seed_model(seed):

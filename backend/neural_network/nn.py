@@ -1,15 +1,25 @@
+"""
+nn.py generates harmony and bass lines for a given melody using genre-
+specific LSTM models. It loads pretrained models or trains new ones using
+genre-specific MIDI files, and predicts notes accordingly.
+"""
+
 import os
 from importlib import import_module
 from itertools import combinations
 import torch
 import neural_network.model as m
 
-# chorales = m21.corpus.chorales.Iterator()
+# Supported genre list
 genres = ["jazz", "gospel", "rock"]
 
 
-# Generates harmonies given a melody sequence
+# --------------------------- Harmony Generation -------------------------------
 def generate_harmony(melody, genre, pretrained):
+    """
+    Generates harmony and bass for a given melody using a genre-specific model.
+    """
+
     path = f"./neural_network/{genre}/pretrained_metadata.py"
 
     if genre in genres and os.path.isfile(path):
@@ -27,6 +37,10 @@ def generate_harmony(melody, genre, pretrained):
 
 
 def squeeze_note_from_chord_permutations(chord):
+    """
+    Reduces a chord tuple to a known note encoding by checking all permutations.
+    """
+
     note = m.encoded_notes["C4"]
     if chord and isinstance(chord, tuple):
         if chord in m.encoded_notes:
@@ -46,6 +60,10 @@ def squeeze_note_from_chord_permutations(chord):
 
 
 def predict_notes(model, melody):
+    """
+    Uses the trained model to predict harmony and bass lines from a melody.
+    """
+
     tensor_input = []
     for chord in melody:
         note = squeeze_note_from_chord_permutations(chord)
