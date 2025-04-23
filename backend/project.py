@@ -1,5 +1,8 @@
 #! /usr/bin/env python3
-"""CS 150 final project"""
+"""
+CS 150 Final Project
+Authors: Easton Kang, Antero Mejr, Chaz Beauchamp
+"""
 
 import argparse
 import random
@@ -12,7 +15,7 @@ from dataclasses import dataclass
 from flask import Flask, request, jsonify
 
 
-# Global state
+# ----------------------------- Global UI State --------------------------------
 @dataclass
 class UiState:
     grid1: list
@@ -22,7 +25,7 @@ class UiState:
     output: str = "midi"
 
 
-# Default Random Grid State (cli usage)
+# Initialize global UI state with random values (used for CLI preview)
 random.seed(22)
 ui_state = UiState(
     [random.random() for _ in range(16)], [random.random() for _ in range(16)]
@@ -30,7 +33,7 @@ ui_state = UiState(
 app = Flask(__name__)
 
 
-# API endpoints
+# ----------------------------- API Endpoints ----------------------------------
 @app.route("/")
 def default():
     return "No default endpoint - use the API methods."
@@ -38,6 +41,11 @@ def default():
 
 @app.route("/api/play", methods=["POST"])
 def play():
+    """
+    API endpoint to play music based on input grids and parameters.
+    Returns a MIDI or score preview via music21.
+    """
+
     ui_state.bpm = request.json["bpm"]
     ui_state.genre = request.json["genre"]
     ui_state.output = request.json["output"]
@@ -52,7 +60,12 @@ def play():
     return jsonify({"message": "Music Generated"}), 200
 
 
+# ----------------------------- Music Generation -------------------------------
 def generate(pretrained):
+    """
+    Generates a full music piece using the current UI state and neural network.
+    """
+
     melody = grid_to_stream(ui_state.grid1, ui_state.grid2, ui_state.bpm)
     harmony, bass = nn.generate_harmony(melody, ui_state.genre, pretrained)
     rhythm_gen = rhythm.RhythmGenerator()
@@ -62,8 +75,12 @@ def generate(pretrained):
     return convert_to_music21(final_melody, final_harmony, final_bass, ui_state.bpm)
 
 
-# Argument parser and entry point
+# ------------------------------ CLI Utilities ---------------------------------
 def parse_args():
+    """
+    Parses command-line arguments to control generation and server behavior.
+    """
+
     parser = argparse.ArgumentParser(description="Run the MelodyLab server")
     parser.add_argument(
         "-p",
@@ -102,6 +119,7 @@ def parse_args():
     return args
 
 
+# ------------------------------ Entry Point -----------------------------------
 if __name__ == "__main__":
     args = parse_args()
     ui_state.bpm = args.bpm
