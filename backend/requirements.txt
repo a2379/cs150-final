@@ -1,4 +1,3 @@
 flask
 music21
-numpy
-torch>=2.0.0+cpu
+torch>=2.0.0
